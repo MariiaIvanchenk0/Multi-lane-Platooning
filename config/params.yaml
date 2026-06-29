@@ -1,0 +1,17 @@
+model_simulation_node:
+  ros__parameters:
+    alpha: 0.0012               # the unknown input gain
+    beta: -0.0001               # the unknown damping coefficient
+    delta: -0.1                 # a fixed unknown disturbance
+    wheelbase: 1.5              # wheelbase (L)
+    base_frame: "robot_1"       # name for this robot instance
+
+    frequency: 50.0             # integration rate [Hz]
+    s0: 0.0                     # initial s (longitudinal position)
+    l0: 0.0                     # initial l (lateral position)
+    psi0: 0.0                   # initial psi (yaw/heading angle)
+    v0: 0.0                     # initial velocity
+
+    # Dynamic parameters
+    torque: 10.0                # the input torque
+    phi: 0.0                   # the input steering angle
