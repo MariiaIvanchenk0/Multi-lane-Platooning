@@ -35,8 +35,8 @@ class ModelSimulationNode(Node):
         self.declare_parameter('wheelbase', 0.5)
         self.declare_parameter('frequency', 50.0)
 
-        self.declare_parameter('alpha', 0.0012)
-        self.declare_parameter('beta', -0.0001)
+        self.declare_parameter('alpha', 0.012)
+        self.declare_parameter('beta', -0.01)
         self.declare_parameter('delta', -0.1)
 
         self.declare_parameter('s0', 0.0)
@@ -44,7 +44,7 @@ class ModelSimulationNode(Node):
         self.declare_parameter('psi0', 0.0)
         self.declare_parameter('v0', 0.0)
 
-        self.declare_parameter('torque', 10.0)
+        self.declare_parameter('torque', 100.0)
         self.declare_parameter('phi', 0.05)
         self.declare_parameter('base_frame', 'robot_1')
 
@@ -52,8 +52,8 @@ class ModelSimulationNode(Node):
         self.L = self.get_parameter('wheelbase').value
         self.dt = 1.0 / self.get_parameter('frequency').value # period 
 
-        self.alpha = self.get_parameter('beta').value
-        self.beta = self.get_parameter('alpha').value
+        self.alpha = self.get_parameter('alpha').value
+        self.beta = self.get_parameter('beta').value
         self.delta = self.get_parameter('delta').value
 
         self.state = [
@@ -98,7 +98,23 @@ class ModelSimulationNode(Node):
     def step(self):
         "Timer callback: integrate one step and publish the pose."
         self.T = self.get_parameter('torque').value
-        self.phi = self.get_parameter('phi').value
+        self.phi = self.get_parameter('phi').valuemodel_simulation_node:
+  ros__parameters:
+    alpha: 0.012                # the unknown input gain
+    beta: -0.01               # the unknown damping coefficient
+    delta: -0.1                 # a fixed unknown disturbance
+    wheelbase: 0.5              # wheelbase (L)
+    base_frame: "robot_1"       # name for this robot instance
+
+    frequency: 50.0             # integration rate [Hz]
+    s0: 0.0                     # initial s (longitudinal position)
+    l0: 0.0                     # initial l (lateral position)
+    psi0: 0.0                   # initial psi (yaw/heading angle)
+    v0: 0.0                     # initial velocity
+
+    # Dynamic parameters
+    torque: 100.0               # the input torque
+    phi: 0.05                   # the input steering angle
 
         self.state = self.rk4_step(self.state, self.phi, self.dt)
         self.state[2] = math.atan2(math.sin(self.state[2]),math.cos(self.state[2]))  # wrap heading to [-pi, pi]
@@ -135,7 +151,8 @@ class ModelSimulationNode(Node):
         return x, y, global_theta
 
     def publish_to_sim(self, state):
-        x, y, theta = self.frenet_to_cartesian(state)
+        # x, y, theta = self.frenet_to_cartesian(state)
+        x, y, theta, _ = state 
         now = self.get_clock().now().to_msg()
 
         # Construct Quaternion
