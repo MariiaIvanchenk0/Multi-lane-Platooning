@@ -22,6 +22,7 @@ The integrated pose is broadcasted on /tf and /model_marker so it can be visuali
 import math
 import rclpy
 from rclpy.node import Node
+from std_msgs.msg import Float64
 from tf2_ros import TransformBroadcaster
 from visualization_msgs.msg import Marker
 from geometry_msgs.msg import TransformStamped, Quaternion
@@ -44,7 +45,7 @@ class ModelSimulationNode(Node):
         self.declare_parameter('psi0', 0.0)
         self.declare_parameter('v0', 0.0)
 
-        self.declare_parameter('torque', 100.0) # 10.0
+        # self.declare_parameter('torque', 100.0) # 10.0
         self.declare_parameter('phi', 0.05)
         self.declare_parameter('base_frame', 'robot_1')
 
@@ -64,8 +65,10 @@ class ModelSimulationNode(Node):
         ]
 
         self.base_frame = self.get_parameter('base_frame').value
+        self.T = 0.0
 
         # Callbacks
+        self.torque_sub = self.create_subscription(Float64, 'cntl_torque', self.torque_callback, 10)
         self.tf_broadcaster = TransformBroadcaster(self)
         self.timer = self.create_timer(self.dt, self.step)
         self.marker_pub = self.create_publisher(Marker, '/model_marker', 10)
@@ -94,10 +97,13 @@ class ModelSimulationNode(Node):
             state[i] + (dt / 6.0) * (k1[i] + 2.0 * k2[i] + 2.0 * k3[i] + k4[i])
             for i in range(len(state))
         ]
+    
+    def torque_callback(self, msg):
+        self.T = msg.data
 
     def step(self):
         "Timer callback: integrate one step and publish the pose."
-        self.T = self.get_parameter('torque').value
+        # self.T = self.get_parameter('torque').value
         self.phi = self.get_parameter('phi').value
 
         self.state = self.rk4_step(self.state, self.phi, self.dt)
