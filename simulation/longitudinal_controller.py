@@ -28,10 +28,11 @@ class LongitudinalSimNode(Node):
         super().__init__('longitudinal_controller_node')
         
         # Declare parameters
-        self.declare_parameter('k_1', 7.0)
-        self.declare_parameter('k_2', 1.0)
-        self.declare_parameter('v_des', 25.0)
-        
+        self.declare_parameter('k_1', 30)
+        self.declare_parameter('k_2', 0.3)
+        # self.declare_parameter('v_des', 25.0)
+        self.declare_parameter('frequency', 20.0)
+
         self.declare_parameter('gamma_alpha', 0.001)
         self.declare_parameter('gamma_beta', 0.0001)
         self.declare_parameter('gamma_delta', 0.01)
@@ -41,11 +42,15 @@ class LongitudinalSimNode(Node):
         self.declare_parameter('delta_hat', -0.1)       # Adaptive guess for constant disturbance/friction
 
         self.omega = 0.0          # Accumulated velocity error state
+        self.current_v = 20.0
+        self.true_alpha = 1.2e-3
+        self.true_beta = -1.0e-4
+        self.true_delta = -0.1
 
         # Get parameters
         self.k_1 = self.get_parameter('k_1').value
         self.k_2 = self.get_parameter('k_2').value
-        self.v_des = self.get_parameter('v_des').value
+        # self.v_des = self.get_parameter('v_des').value
 
         self.gamma_alpha = self.get_parameter('gamma_alpha').value
         self.gamma_beta = self.get_parameter('gamma_beta').value
@@ -63,15 +68,17 @@ class LongitudinalSimNode(Node):
 
     def control_loop_callback(self):
         # NOTE: In production, these inputs should be fetched dynamically 
-        v = 20.0          # Current velocity (m/s)
+        v_des = 25.0  # Current velocity (m/s)
         v_des_dot = 0.0   # Target acceleration (m/s^2)
         
+        v = self.current_v
+
         # --- Step 1: Calculate Velocity Error ---
-        e_v = v - self.v_des
+        e_v = v - v_des
         
         # --- Step 2: Calculate Tau (Intermediate Control Action) ---
-        tau = (-self.k1 * e_v 
-               - self.k2 * self.omega 
+        tau = (-self.k_1 * e_v 
+               - self.k_2 * self.omega 
                - self.beta_hat * (v ** 2) 
                - self.delta_hat 
                + v_des_dot)
@@ -87,15 +94,26 @@ class LongitudinalSimNode(Node):
         self.alpha_bar_hat += alpha_bar_hat_dot * self.dt
         self.beta_hat += beta_hat_dot * self.dt
         self.delta_hat += delta_hat_dot * self.dt
-        
+
+        if self.alpha_bar_hat < 0.0001:
+            self.alpha_bar_hat = 0.0001
+
+        self.beta_hat = max(min(self.beta_hat, 0.0), -0.01)
+        self.delta_hat = max(min(self.delta_hat, 0.0), -5.0)               
+
         # --- Step 5: Calculate Final Torque ---
         torque = self.alpha_bar_hat * tau
+        MAX_TORQUE =250.0
+        torque = max(min(torque, MAX_TORQUE), -MAX_TORQUE)
+
+        v_dot = (self.true_alpha * torque) + (self.true_beta * (v **2)) + self.true_delta
+        self.current_v += v_dot * self.dt
         
         msg = Float64()
         msg.data = torque
         self.torque_pub.publish(msg)
         self.get_logger().info(
-            f"e_v: {e_v:.2f} | Torque: {torque:.2f} | α_hat: {self.alpha_bar_hat:.4f} | β_hat: {self.beta_hat:.4f}"
+            f"e_v: {e_v:.2f} | current_v: {self.current_v} | Torque: {torque:.2f}"
         )
 
 
@@ -113,4 +131,3 @@ def main(args=None):
 
 if __name__ == '__main__':
     main()
-
