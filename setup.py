@@ -31,6 +31,7 @@ setup(
     entry_points={
         'console_scripts': [
             'model_simulation_node = simulation.model_simulation:main',
+            'longitudinal_controller_node = simulation.longitudinal_controller:main',
         ],
     },
 )
