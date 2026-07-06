@@ -82,11 +82,24 @@ class ModelSimulationNode(Node):
     # RK4 Integration Layer:
     def dynamics(self, state):
         "Return the state derivative [s_dot, l_dot, psi_dot, v_dot]."
-        _, _, psi, v = state
-        s_dot = v * math.cos(psi)
+        _, l, psi, v = state
+
+        # s_dot = v * math.cos(psi)
+        # l_dot = v * math.sin(psi)
+        # psi_dot = (v / self.L) * math.tan(self.phi)
+
+        R = 175.0
+        kappa_r = 1.0 / R
+        
+        denominator = 1.0 - kappa_r * l
+        if abs(denominator) < 1e-6:
+            denominator = 1e-6
+            
+        s_dot = (v * math.cos(psi)) / denominator
         l_dot = v * math.sin(psi)
-        psi_dot = (v / self.L) * math.tan(self.phi)
+        psi_dot = ((v / self.L) * math.tan(self.phi)) - (kappa_r * s_dot)
         v_dot = self.alpha * self.T + self.beta * (v**2) + self.delta
+
         return [s_dot, l_dot, psi_dot, v_dot]
 
     def rk4_step(self, state, dt):
@@ -189,8 +202,8 @@ class ModelSimulationNode(Node):
         self.lane_pub.publish(marker)
 
     def publish_to_sim(self, state):
-        # x, y, theta = self.frenet_to_cartesian(state)
-        x, y, theta, _ = state
+        x, y, theta = self.frenet_to_cartesian(state)
+        # x, y, theta, _ = state
         now = self.get_clock().now().to_msg()
 
         # Construct Quaternion
