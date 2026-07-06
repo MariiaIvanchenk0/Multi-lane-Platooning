@@ -168,32 +168,25 @@ class ModelSimulationNode(Node):
         return x, y, global_theta
     
     def publish_lane_centerline(self):
-        "Publishes a static circular centerline to RViz representing the lane"
+        "Publishes a straight centerline to match the flat physics space"
         now = self.get_clock().now().to_msg()
         marker = Marker()
-        marker.header.frame_id = "map"  # Must match your simulation frame
+        marker.header.frame_id = "map"
         marker.header.stamp = now
         marker.ns = "environment"
         marker.id = 1
         marker.type = Marker.LINE_STRIP
         marker.action = Marker.ADD
-        
-        # Line width thickness (0.3 meters wide)
         marker.scale.x = 0.3 
         
-        marker.color.r = 0.0
         marker.color.g = 1.0
-        marker.color.b = 0.0
         marker.color.a = 0.6
         
-        R = 20.0  # Road radius from the paper framework
-        num_points = 200
-        
-        for i in range(num_points + 1):
-            theta_r = (2.0 * math.pi / num_points) * i
+        # Draw a straight 500-meter line along the X-axis
+        for i in range(0, 500, 5):
             p = Point()
-            p.x = R * math.sin(theta_r)
-            p.y = R - R * math.cos(theta_r)
+            p.x = float(i)
+            p.y = 0.0  # Centerline is at l = 0
             p.z = 0.0
             marker.points.append(p)
             
