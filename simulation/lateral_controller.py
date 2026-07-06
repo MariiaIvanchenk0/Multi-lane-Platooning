@@ -1,0 +1,102 @@
+"""
+Lateral Controller
+Based on paper: MeereFidanHeemels2023_IFAC
+
+Step 1: Calculate Errors
+    e_psi = - psi
+    e_lat = l_lane - l_des - l
+
+Step 2: Calculate steering angle
+    numerator = - cos(e_psi) * e_lat - (k_a1 + k_a2) * sin(e_psi)
+    denominator = k_a1 - (k_a1 + k_a2) * cos(e_psi) + sin(e_psi) * e_lat
+    phi = arctan(num, denom)
+
+"""
+
+import math
+import rclpy
+from rclpy.node import Node
+from std_msgs.msg import Float64, Float64MultiArray
+
+
+class LateralControllerNode(Node):
+    def __init__(self):
+        super().__init__('lateral_controller_node')
+        
+        # Declare parameters
+        self.declare_parameter('k_a1', 1.0)
+        self.declare_parameter('k_a2', 2.0)
+
+        # Get parameters
+        self.state = [
+            self.s, self.l, self.psi, self.v
+        ]
+        self.dt = 1.0 / self.get_parameter('frequency').value # period      
+        self.k_a1 = self.get_parameter('k_a1').value
+        self.k_a2 = self.get_parameter('k_a2').value
+
+        # (Simulating the Real Robot)
+        # self.L = self.get_parameter('wheelbase').value
+        # self.current_l = -0.8  # Starting lateral position (0.8m off-center to the right)
+        # self.current_psi = 0.1 # Starting heading misalignment (radians)
+        # self.constant_v = 10.0 # Fixed forward velocity (m/s) to isolate lateral testing
+        
+        self.l_lane = 0.0  # Curvilinear frame centerline[cite: 1]
+        self.l_des = 0.0   # Desired offset position from centerline[cite: 1]
+        
+        # Publisher & Timer
+        self.state_sub = self.create_subscription(Float64MultiArray, 'vehicle_state', self.state_callback, 10)
+        self.state_pub = self.create_publisher(Float64MultiArray, 'updated_state', 10)
+        self.steering_pub = self.create_publisher(Float64, 'cmd_steering', 10)
+        self.timer = self.create_timer(self.dt, self.control_loop_callback)
+        self.get_logger().info("Lateral Geometric Controller Node Initialized.")
+    
+    def state_callback(self, msg):
+        self.state = msg
+
+    def control_loop_callback(self):
+        l = self.l
+        psi = self.psi
+        
+        # --- Step 1: Calculate Errors ---
+        e_psi = -psi
+        e_lat = self.l_lane - self.l_des - l
+        
+        # --- Step 2: Calculate Steering Angle Components ---
+        numerator = -math.cos(e_psi) * e_lat - (self.k_a1 + self.k_a2) * math.sin(e_psi)
+        denominator = self.k_a1 - (self.k_a1 + self.k_a2) * math.cos(e_psi) + math.sin(e_psi) * e_lat
+        phi = math.atan2(numerator, denominator)
+        
+        MAX_STEER = math.radians(35.0)
+        phi = max(min(phi, MAX_STEER), -MAX_STEER)
+        
+        # (Closing the Loop)
+        # l_dot = v * math.sin(psi)
+        # psi_dot = (v / self.L) * math.tan(phi)
+        
+        # Advance the physical simulation states using Forward Euler integration[cite: 1]
+        # self.current_l += l_dot * self.dt
+        # self.current_psi += psi_dot * self.dt
+        
+        msg = Float64()
+        msg.data = phi
+        self.steering_pub.publish(msg)
+        
+        self.get_logger().info(
+            f"Lat Error: {e_lat:.3f}m | Yaw Error: {math.degrees(e_psi):.1f}° | "
+            f"Steer Output (phi): {math.degrees(phi):.1f}°"
+        )
+
+def main(args=None):
+    rclpy.init(args=args)
+    node = LateralControllerNode()
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()

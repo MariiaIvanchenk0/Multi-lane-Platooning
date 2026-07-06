@@ -13,7 +13,7 @@ model_simulation_node:
     v0: 0.0                     # initial velocity
 
     # Dynamic parameters
-    torque: 100.0               # the input torque
+    # torque: 100.0               # the input torque
     phi: 0.05                   # the input steering angle
 
 longitudinal_controller_node:
@@ -32,4 +32,10 @@ longitudinal_controller_node:
     beta_hat: -0.0001
     delta_hat: -0.1
     
+lateral_controller_node:
+  ros__parameters:
+    frequency: 50.0
+    wheelbase: 0.5
 
+    k_a1: 1.0
+    k_a2: 2.0

@@ -21,7 +21,7 @@ Step 3: Torque
 
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import Float64
+from std_msgs.msg import Float64, Float64MultiArray
 
 class LongitudinalSimNode(Node):
     def __init__(self):
@@ -41,6 +41,9 @@ class LongitudinalSimNode(Node):
         self.declare_parameter('delta_hat', -0.1)       # Adaptive guess for constant disturbance/friction
 
         self.omega = 0.0          # Accumulated velocity error state
+        self.state = [
+            self.s, self.l, self.psi, self.v
+        ]
 
         # Get parameters
         self.k_1 = self.get_parameter('k_1').value
@@ -56,14 +59,19 @@ class LongitudinalSimNode(Node):
         self.delta_hat = self.get_parameter('delta_hat').value
 
         # Publisher & Timer
+        self.state_sub = self.create_subscription(Float64MultiArray, 'vehicle_state', self.state_callback, 10)
         self.torque_pub = self.create_publisher(Float64, 'cntl_torque', 10)
         self.dt = 1.0 / self.get_parameter('frequency').value # period 
         self.timer = self.create_timer(self.dt, self.control_loop_callback)
         self.get_logger().info("Longitudinal Adaptive Controller Node Initialized.")
+    
+    def state_callback(self, msg):
+        self.state = msg
 
     def control_loop_callback(self):
         # NOTE: In production, these inputs should be fetched dynamically 
-        v = 20.0          # Current velocity (m/s)
+        # v = 20.0          # Current velocity (m/s)
+        v = self.v
         v_des_dot = 0.0   # Target acceleration (m/s^2)
         
         # --- Step 1: Calculate Velocity Error ---
@@ -73,7 +81,7 @@ class LongitudinalSimNode(Node):
         tau = (-self.k1 * e_v 
                - self.k2 * self.omega 
                - self.beta_hat * (v ** 2) 
-               - self.delta_hat 
+               - self.delta_hat
                + v_des_dot)
         
         # --- Step 3: Compute Adaptive Law Derivatives (ODEs) ---

@@ -22,7 +22,7 @@ The integrated pose is broadcasted on /tf and /model_marker so it can be visuali
 import math
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import Float64
+from std_msgs.msg import Float64, Float64MultiArray
 from tf2_ros import TransformBroadcaster
 from visualization_msgs.msg import Marker
 from geometry_msgs.msg import TransformStamped, Quaternion
@@ -72,6 +72,7 @@ class ModelSimulationNode(Node):
         self.tf_broadcaster = TransformBroadcaster(self)
         self.timer = self.create_timer(self.dt, self.step)
         self.marker_pub = self.create_publisher(Marker, '/model_marker', 10)
+        self.state_pub = self.create_publisher(Float64MultiArray, '/vehicle_state', 10)
 
     # RK4 Integration Layer:
     def dynamics(self, state, phi):
@@ -108,6 +109,7 @@ class ModelSimulationNode(Node):
 
         self.state = self.rk4_step(self.state, self.phi, self.dt)
         self.state[2] = math.atan2(math.sin(self.state[2]),math.cos(self.state[2]))  # wrap heading to [-pi, pi]
+        self.state_pub.publish(self.state)
         self.publish_to_sim(self.state)
 
 
