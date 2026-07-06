@@ -25,7 +25,7 @@ from rclpy.node import Node
 from std_msgs.msg import Float64, Float64MultiArray
 from tf2_ros import TransformBroadcaster
 from visualization_msgs.msg import Marker
-from geometry_msgs.msg import TransformStamped, Quaternion
+from geometry_msgs.msg import TransformStamped, Quaternion, Point
 
 
 class ModelSimulationNode(Node):
@@ -72,6 +72,7 @@ class ModelSimulationNode(Node):
         self.torque_sub = self.create_subscription(Float64, 'cntl_torque', self.torque_callback, 10)
         self.phi_sub = self.create_subscription(Float64, 'cntl_phi', self.phi_callback, 10)
 
+        self.lane_pub = self.create_publisher(Marker, '/lane_marker', 10)
         self.marker_pub = self.create_publisher(Marker, '/model_marker', 10)
         self.state_pub = self.create_publisher(Float64MultiArray, '/vehicle_state', 10)
 
@@ -121,6 +122,7 @@ class ModelSimulationNode(Node):
         msg.data = self.state
         self.state_pub.publish(msg)
         self.publish_to_sim(self.state)
+        self.publish_lane_centerline()
 
 
     def frenet_to_cartesian(self, state):
@@ -151,6 +153,40 @@ class ModelSimulationNode(Node):
         global_theta = theta_r + math.atan2(v_lat, denominator)
         
         return x, y, global_theta
+    
+    def publish_lane_centerline(self):
+        "Publishes a static circular centerline to RViz representing the lane"
+        now = self.get_clock().now().to_msg()
+        marker = Marker()
+        marker.header.frame_id = "map"  # Must match your simulation frame
+        marker.header.stamp = now
+        marker.ns = "environment"
+        marker.id = 1
+        marker.type = Marker.LINE_STRIP
+        marker.action = Marker.ADD
+        
+        # Line width thickness (0.3 meters wide)
+        marker.scale.x = 0.3 
+        
+        # Color: Bright semi-transparent green
+        marker.color.r = 0.0
+        marker.color.g = 1.0
+        marker.color.b = 0.0
+        marker.color.a = 0.6
+        
+        R = 175.0  # Road radius from the paper framework
+        num_points = 200
+        
+        # Loop 360 degrees around the circle to generate the track points
+        for i in range(num_points + 1):
+            theta_r = (2.0 * math.pi / num_points) * i
+            p = Point()
+            p.x = R * math.sin(theta_r)
+            p.y = R - R * math.cos(theta_r)
+            p.z = 0.0
+            marker.points.append(p)
+            
+        self.lane_pub.publish(marker)
 
     def publish_to_sim(self, state):
         # x, y, theta = self.frenet_to_cartesian(state)
