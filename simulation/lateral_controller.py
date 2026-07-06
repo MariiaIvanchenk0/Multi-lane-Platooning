@@ -46,7 +46,7 @@ class LateralControllerNode(Node):
         # Publisher & Timer
         self.state_sub = self.create_subscription(Float64MultiArray, 'vehicle_state', self.state_callback, 10)
         self.state_pub = self.create_publisher(Float64MultiArray, 'updated_state', 10)
-        self.steering_pub = self.create_publisher(Float64, 'cmd_steering', 10)
+        self.steering_pub = self.create_publisher(Float64, 'cntl_phi', 10)
         self.timer = self.create_timer(self.dt, self.control_loop_callback)
         self.get_logger().info("Lateral Geometric Controller Node Initialized.")
     
@@ -81,10 +81,10 @@ class LateralControllerNode(Node):
         msg.data = phi
         self.steering_pub.publish(msg)
         
-        # self.get_logger().info(
-        #     f"Lat Error: {e_lat:.3f}m | Yaw Error: {math.degrees(e_psi):.1f}° | "
-        #     f"Steer Output (phi): {math.degrees(phi):.1f}°"
-        # )
+        self.get_logger().info(
+            f"Lat Error: {e_lat:.3f}m | Yaw Error: {math.degrees(e_psi):.1f}° | "
+            f"Steer Output (phi): {math.degrees(phi):.1f}°"
+        )
 
 def main(args=None):
     rclpy.init(args=args)

@@ -66,33 +66,37 @@ class ModelSimulationNode(Node):
 
         self.base_frame = self.get_parameter('base_frame').value
         self.T = 0.0
+        self.phi = 0.0
 
         # Callbacks
         self.torque_sub = self.create_subscription(Float64, 'cntl_torque', self.torque_callback, 10)
-        self.tf_broadcaster = TransformBroadcaster(self)
-        self.timer = self.create_timer(self.dt, self.step)
+        self.phi_sub = self.create_subscription(Float64, 'cntl_phi', self.phi_callback, 10)
+
         self.marker_pub = self.create_publisher(Marker, '/model_marker', 10)
         self.state_pub = self.create_publisher(Float64MultiArray, '/vehicle_state', 10)
 
+        self.tf_broadcaster = TransformBroadcaster(self)
+        self.timer = self.create_timer(self.dt, self.step)
+
     # RK4 Integration Layer:
-    def dynamics(self, state, phi):
+    def dynamics(self, state):
         "Return the state derivative [s_dot, l_dot, psi_dot, v_dot]."
         _, _, psi, v = state
         s_dot = v * math.cos(psi)
         l_dot = v * math.sin(psi)
-        psi_dot = (v / self.L) * math.tan(phi)
+        psi_dot = (v / self.L) * math.tan(self.phi)
         v_dot = self.alpha * self.T + self.beta * (v**2) + self.delta
         return [s_dot, l_dot, psi_dot, v_dot]
 
-    def rk4_step(self, state, phi, dt):
+    def rk4_step(self, state, dt):
         "Advance `state` by one RK4 step of length `dt`."
         def add(s, k, scale):
             return [s[i] + scale * k[i] for i in range(len(s))]
 
-        k1 = self.dynamics(state, phi)
-        k2 = self.dynamics(add(state, k1, dt / 2.0), phi)
-        k3 = self.dynamics(add(state, k2, dt / 2.0), phi)
-        k4 = self.dynamics(add(state, k3, dt), phi)
+        k1 = self.dynamics(state)
+        k2 = self.dynamics(add(state, k1, dt / 2.0))
+        k3 = self.dynamics(add(state, k2, dt / 2.0))
+        k4 = self.dynamics(add(state, k3, dt))
 
         return [
             state[i] + (dt / 6.0) * (k1[i] + 2.0 * k2[i] + 2.0 * k3[i] + k4[i])
@@ -102,12 +106,15 @@ class ModelSimulationNode(Node):
     def torque_callback(self, msg):
         self.T = msg.data
 
+    def phi_callback(self, msg):
+        self.phi = msg.data
+
     def step(self):
         "Timer callback: integrate one step and publish the pose."
         # self.T = self.get_parameter('torque').value
-        self.phi = self.get_parameter('phi').value
+        # self.phi = self.get_parameter('phi').value
 
-        self.state = self.rk4_step(self.state, self.phi, self.dt)
+        self.state = self.rk4_step(self.state, self.dt)
         self.state[2] = math.atan2(math.sin(self.state[2]),math.cos(self.state[2]))  # wrap heading to [-pi, pi]
 
         msg = Float64MultiArray()

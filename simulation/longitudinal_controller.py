@@ -75,7 +75,7 @@ class LongitudinalSimNode(Node):
     def control_loop_callback(self):
         # NOTE: In production, these inputs should be fetched dynamically 
         v = self.state[3]
-        v_des = 25.0  # Current velocity (m/s)
+        v_des = 15.0  # Current velocity (m/s)
         v_des_dot = 0.0   # Target acceleration (m/s^2)
         
         # --- Step 1: Calculate Velocity Error ---

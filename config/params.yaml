@@ -22,8 +22,8 @@ longitudinal_controller_node:
     gamma_beta: 0.0001
     gamma_delta: 0.01
 
-    k_1: 3.0
-    k_2: 0.3
+    k_1: 5.0
+    k_2: 0.5
 
     # v_des: 25.0
     frequency: 20.0
