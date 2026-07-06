@@ -6,7 +6,7 @@ model_simulation_node:
     wheelbase: 0.5              # wheelbase (L)
     base_frame: "robot_1"       # name for this robot instance
 
-    frequency: 50.0             # integration rate [Hz]
+    frequency: 20.0             # integration rate [Hz]
     s0: 0.0                     # initial s (longitudinal position)
     l0: 0.0                     # initial l (lateral position)
     psi0: 0.0                   # initial psi (yaw/heading angle)
@@ -22,11 +22,11 @@ longitudinal_controller_node:
     gamma_beta: 0.0001
     gamma_delta: 0.01
 
-    k_1: 7.0
-    k_2: 1.0
+    k_1: 3.0
+    k_2: 0.3
 
     v_des: 25.0
-    frequency: 50.0
+    frequency: 20.0
 
     alpha_bar_hat: 1.0
     beta_hat: -0.0001
