@@ -72,9 +72,9 @@ class ModelSimulationNode(Node):
         self.torque_sub = self.create_subscription(Float64, 'cntl_torque', self.torque_callback, 10)
         self.phi_sub = self.create_subscription(Float64, 'cntl_phi', self.phi_callback, 10)
 
-        self.lane_pub = self.create_publisher(Marker, 'lane_marker', 10)
-        self.marker_pub = self.create_publisher(Marker, 'model_marker', 10)
-        self.state_pub = self.create_publisher(Float64MultiArray, 'vehicle_state', 10)
+        self.lane_pub = self.create_publisher(Marker, '/lane_marker', 10)
+        self.marker_pub = self.create_publisher(Marker, '/model_marker', 10)
+        self.state_pub = self.create_publisher(Float64MultiArray, '/vehicle_state', 10)
 
         self.tf_broadcaster = TransformBroadcaster(self)
         self.timer = self.create_timer(self.dt, self.step)
@@ -88,7 +88,7 @@ class ModelSimulationNode(Node):
         # l_dot = v * math.sin(psi)
         # psi_dot = (v / self.L) * math.tan(self.phi)
 
-        R = 20.0
+        R = 175.0
         kappa_r = 1.0 / R
         
         denominator = 1.0 - kappa_r * l
@@ -168,33 +168,42 @@ class ModelSimulationNode(Node):
         return x, y, global_theta
     
     def publish_lane_centerline(self):
-        "Publishes a straight centerline to match the flat physics space"
+        "Publishes a static circular centerline to RViz representing the lane"
         now = self.get_clock().now().to_msg()
         marker = Marker()
-        marker.header.frame_id = "map"
+        marker.header.frame_id = "map"  # Must match your simulation frame
         marker.header.stamp = now
         marker.ns = "environment"
         marker.id = 1
         marker.type = Marker.LINE_STRIP
         marker.action = Marker.ADD
+        
+        # Line width thickness (0.3 meters wide)
         marker.scale.x = 0.3 
         
+        # Color: Bright semi-transparent green
+        marker.color.r = 0.0
         marker.color.g = 1.0
+        marker.color.b = 0.0
         marker.color.a = 0.6
         
-        # Draw a straight 500-meter line along the X-axis
-        for i in range(0, 500, 5):
+        R = 20.0  # Road radius from the paper framework
+        num_points = 200
+        
+        # Loop 360 degrees around the circle to generate the track points
+        for i in range(num_points + 1):
+            theta_r = (2.0 * math.pi / num_points) * i
             p = Point()
-            p.x = float(i)
-            p.y = 0.0  # Centerline is at l = 0
+            p.x = R * math.sin(theta_r)
+            p.y = R - R * math.cos(theta_r)
             p.z = 0.0
             marker.points.append(p)
             
         self.lane_pub.publish(marker)
 
     def publish_to_sim(self, state):
-        # x, y, theta = self.frenet_to_cartesian(state)
-        x, y, theta, _ = state
+        x, y, theta = self.frenet_to_cartesian(state)
+        # x, y, theta, _ = state
         now = self.get_clock().now().to_msg()
 
         # Construct Quaternion
