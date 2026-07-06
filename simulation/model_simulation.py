@@ -72,9 +72,9 @@ class ModelSimulationNode(Node):
         self.torque_sub = self.create_subscription(Float64, 'cntl_torque', self.torque_callback, 10)
         self.phi_sub = self.create_subscription(Float64, 'cntl_phi', self.phi_callback, 10)
 
-        self.lane_pub = self.create_publisher(Marker, '/lane_marker', 10)
-        self.marker_pub = self.create_publisher(Marker, '/model_marker', 10)
-        self.state_pub = self.create_publisher(Float64MultiArray, '/vehicle_state', 10)
+        self.lane_pub = self.create_publisher(Marker, 'lane_marker', 10)
+        self.marker_pub = self.create_publisher(Marker, 'model_marker', 10)
+        self.state_pub = self.create_publisher(Float64MultiArray, 'vehicle_state', 10)
 
         self.tf_broadcaster = TransformBroadcaster(self)
         self.timer = self.create_timer(self.dt, self.step)
@@ -88,7 +88,7 @@ class ModelSimulationNode(Node):
         # l_dot = v * math.sin(psi)
         # psi_dot = (v / self.L) * math.tan(self.phi)
 
-        R = 175.0
+        R = 20.0
         kappa_r = 1.0 / R
         
         denominator = 1.0 - kappa_r * l
@@ -181,7 +181,6 @@ class ModelSimulationNode(Node):
         # Line width thickness (0.3 meters wide)
         marker.scale.x = 0.3 
         
-        # Color: Bright semi-transparent green
         marker.color.r = 0.0
         marker.color.g = 1.0
         marker.color.b = 0.0
@@ -190,7 +189,6 @@ class ModelSimulationNode(Node):
         R = 20.0  # Road radius from the paper framework
         num_points = 200
         
-        # Loop 360 degrees around the circle to generate the track points
         for i in range(num_points + 1):
             theta_r = (2.0 * math.pi / num_points) * i
             p = Point()
@@ -202,8 +200,8 @@ class ModelSimulationNode(Node):
         self.lane_pub.publish(marker)
 
     def publish_to_sim(self, state):
-        x, y, theta = self.frenet_to_cartesian(state)
-        # x, y, theta, _ = state
+        # x, y, theta = self.frenet_to_cartesian(state)
+        x, y, theta, _ = state
         now = self.get_clock().now().to_msg()
 
         # Construct Quaternion
