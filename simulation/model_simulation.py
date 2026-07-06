@@ -129,7 +129,7 @@ class ModelSimulationNode(Node):
         "Converts Frenet coordinates (s, l) to Global Cartesian (x, y, theta)"
 
         s, l, psi, v = state
-        R = 175.0  # Constant road curve radius from MeereFidanHeemels2023_IFAC.pdf
+        R = 20.0  # Constant road curve radius from MeereFidanHeemels2023_IFAC.pdf
         kappa_r = 1.0 / R
 
         v_lat = v * math.sin(psi)
@@ -174,7 +174,7 @@ class ModelSimulationNode(Node):
         marker.color.b = 0.0
         marker.color.a = 0.6
         
-        R = 175.0  # Road radius from the paper framework
+        R = 20.0  # Road radius from the paper framework
         num_points = 200
         
         # Loop 360 degrees around the circle to generate the track points
