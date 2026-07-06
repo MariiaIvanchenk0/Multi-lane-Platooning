@@ -25,7 +25,7 @@ longitudinal_controller_node:
     k_1: 3.0
     k_2: 0.3
 
-    v_des: 25.0
+    # v_des: 25.0
     frequency: 20.0
 
     alpha_bar_hat: 1.0

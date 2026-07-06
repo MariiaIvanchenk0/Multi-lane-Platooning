@@ -45,10 +45,10 @@ class LongitudinalSimNode(Node):
         self.state = [
             self.s, self.l, self.psi, self.v
         ]
-        self.current_v = 20.0
-        self.true_alpha = 1.2e-3
-        self.true_beta = -1.0e-4
-        self.true_delta = -0.1
+        # self.current_v = 20.0
+        # self.true_alpha = 1.2e-3
+        # self.true_beta = -1.0e-4
+        # self.true_delta = -0.1
 
         # Get parameters
         self.k_1 = self.get_parameter('k_1').value
@@ -79,8 +79,6 @@ class LongitudinalSimNode(Node):
         v_des = 25.0  # Current velocity (m/s)
         v_des_dot = 0.0   # Target acceleration (m/s^2)
         
-        v = self.current_v
-
         # --- Step 1: Calculate Velocity Error ---
         e_v = v - v_des
         
@@ -111,11 +109,12 @@ class LongitudinalSimNode(Node):
 
         # --- Step 5: Calculate Final Torque ---
         torque = self.alpha_bar_hat * tau
-        MAX_TORQUE =250.0
+
+        MAX_TORQUE = 250.0
         torque = max(min(torque, MAX_TORQUE), -MAX_TORQUE)
 
-        v_dot = (self.true_alpha * torque) + (self.true_beta * (v **2)) + self.true_delta
-        self.current_v += v_dot * self.dt
+        # v_dot = (self.true_alpha * torque) + (self.true_beta * (v **2)) + self.true_delta
+        # self.v += v_dot * self.dt
         
         msg = Float64()
         msg.data = torque
