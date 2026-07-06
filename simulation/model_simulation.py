@@ -125,8 +125,6 @@ class ModelSimulationNode(Node):
 
     def step(self):
         "Timer callback: integrate one step and publish the pose."
-        # self.T = self.get_parameter('torque').value
-        # self.phi = self.get_parameter('phi').value
 
         self.state = self.rk4_step(self.state, self.dt)
         self.state[2] = math.atan2(math.sin(self.state[2]),math.cos(self.state[2]))  # wrap heading to [-pi, pi]

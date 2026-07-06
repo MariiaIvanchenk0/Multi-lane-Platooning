@@ -33,15 +33,9 @@ class LateralControllerNode(Node):
         self.dt = 1.0 / self.get_parameter('frequency').value # period      
         self.k_a1 = self.get_parameter('k_a1').value
         self.k_a2 = self.get_parameter('k_a2').value
-
-        # (Simulating the Real Robot)
-        # self.L = self.get_parameter('wheelbase').value
-        # self.current_l = -0.8  # Starting lateral position (0.8m off-center to the right)
-        # self.current_psi = 0.1 # Starting heading misalignment (radians)
-        # self.constant_v = 10.0 # Fixed forward velocity (m/s) to isolate lateral testing
         
-        self.l_lane = 0.0  # Curvilinear frame centerline[cite: 1]
-        self.l_des = 0.0   # Desired offset position from centerline[cite: 1]
+        self.l_lane = 0.0
+        self.l_des = 0.0
         
         # Publisher & Timer
         self.state_sub = self.create_subscription(Float64MultiArray, 'vehicle_state', self.state_callback, 10)
@@ -68,7 +62,12 @@ class LateralControllerNode(Node):
         if abs(denominator) < 1e-6:
             denominator = 1e-6 if denominator >= 0 else -1e-6
 
-        phi = math.atan(numerator / denominator)
+        phi_feedback = math.atan(numerator / denominator)
+
+        L = 0.5
+        R = 20.0
+        phi_feedforward = math.atan(L / R)
+        phi = phi_feedback + phi_feedforward
         
         MAX_STEER = math.radians(35.0)
         phi = max(min(phi, MAX_STEER), -MAX_STEER)
