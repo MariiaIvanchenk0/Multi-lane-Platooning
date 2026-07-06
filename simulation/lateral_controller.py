@@ -26,11 +26,10 @@ class LateralControllerNode(Node):
         # Declare parameters
         self.declare_parameter('k_a1', 1.0)
         self.declare_parameter('k_a2', 2.0)
+        self.declare_parameter('frequency', 20.0)
 
         # Get parameters
-        self.state = [
-            self.s, self.l, self.psi, self.v
-        ]
+        self.state = [0.0, 0.0, 0.0, 0.0]
         self.dt = 1.0 / self.get_parameter('frequency').value # period      
         self.k_a1 = self.get_parameter('k_a1').value
         self.k_a2 = self.get_parameter('k_a2').value
@@ -52,11 +51,11 @@ class LateralControllerNode(Node):
         self.get_logger().info("Lateral Geometric Controller Node Initialized.")
     
     def state_callback(self, msg):
-        self.state = msg
+        self.state = msg.data
 
     def control_loop_callback(self):
-        l = self.l
-        psi = self.psi
+        l = self.state[1]
+        psi = self.state[2]
         
         # --- Step 1: Calculate Errors ---
         e_psi = -psi
@@ -82,10 +81,10 @@ class LateralControllerNode(Node):
         msg.data = phi
         self.steering_pub.publish(msg)
         
-        self.get_logger().info(
-            f"Lat Error: {e_lat:.3f}m | Yaw Error: {math.degrees(e_psi):.1f}° | "
-            f"Steer Output (phi): {math.degrees(phi):.1f}°"
-        )
+        # self.get_logger().info(
+        #     f"Lat Error: {e_lat:.3f}m | Yaw Error: {math.degrees(e_psi):.1f}° | "
+        #     f"Steer Output (phi): {math.degrees(phi):.1f}°"
+        # )
 
 def main(args=None):
     rclpy.init(args=args)

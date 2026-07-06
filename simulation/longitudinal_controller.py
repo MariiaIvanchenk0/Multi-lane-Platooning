@@ -42,9 +42,8 @@ class LongitudinalSimNode(Node):
         self.declare_parameter('delta_hat', -0.1)       # Adaptive guess for constant disturbance/friction
 
         self.omega = 0.0          # Accumulated velocity error state
-        self.state = [
-            self.s, self.l, self.psi, self.v
-        ]
+        self.state = [0.0, 0.0, 0.0, 0.0]
+
         # self.current_v = 20.0
         # self.true_alpha = 1.2e-3
         # self.true_beta = -1.0e-4
@@ -71,11 +70,11 @@ class LongitudinalSimNode(Node):
         self.get_logger().info("Longitudinal Adaptive Controller Node Initialized.")
     
     def state_callback(self, msg):
-        self.state = msg
+        self.state = msg.data
 
     def control_loop_callback(self):
         # NOTE: In production, these inputs should be fetched dynamically 
-        v = self.v
+        v = self.state[3]
         v_des = 25.0  # Current velocity (m/s)
         v_des_dot = 0.0   # Target acceleration (m/s^2)
         
@@ -119,9 +118,9 @@ class LongitudinalSimNode(Node):
         msg = Float64()
         msg.data = torque
         self.torque_pub.publish(msg)
-        self.get_logger().info(
-            f"e_v: {e_v:.2f} | current_v: {self.current_v} | Torque: {torque:.2f}"
-        )
+        # self.get_logger().info(
+        #     f"e_v: {e_v:.2f} | current_v: {self.state[3]} | Torque: {torque:.2f}"
+        # )
 
 
 def main(args=None):

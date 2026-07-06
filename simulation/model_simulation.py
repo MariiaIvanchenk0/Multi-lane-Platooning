@@ -109,7 +109,10 @@ class ModelSimulationNode(Node):
 
         self.state = self.rk4_step(self.state, self.phi, self.dt)
         self.state[2] = math.atan2(math.sin(self.state[2]),math.cos(self.state[2]))  # wrap heading to [-pi, pi]
-        self.state_pub.publish(self.state)
+
+        msg = Float64MultiArray()
+        msg.data = self.state
+        self.state_pub.publish(msg)
         self.publish_to_sim(self.state)
 
 
