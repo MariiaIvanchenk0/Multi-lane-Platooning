@@ -37,5 +37,5 @@ lateral_controller_node:
     frequency: 50.0
     wheelbase: 0.5
 
-    k_a1: 0.5
-    k_a2: 1.0
+    k_a1: 1.5
+    k_a2: 3.0

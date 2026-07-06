@@ -88,7 +88,7 @@ class ModelSimulationNode(Node):
         # l_dot = v * math.sin(psi)
         # psi_dot = (v / self.L) * math.tan(self.phi)
 
-        R = 175.0
+        R = 20.0
         kappa_r = 1.0 / R
         
         denominator = 1.0 - kappa_r * l
