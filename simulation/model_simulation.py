@@ -34,7 +34,7 @@ class ModelSimulationNode(Node):
 
         # Declare parameters
         self.declare_parameter('wheelbase', 0.5)
-        self.declare_parameter('frequency', 50.0)
+        self.declare_parameter('frequency', 20.0)
 
         self.declare_parameter('alpha', 0.012)
         self.declare_parameter('beta', -0.01)
@@ -46,7 +46,7 @@ class ModelSimulationNode(Node):
         self.declare_parameter('v0', 0.0)
 
         # self.declare_parameter('torque', 100.0) # 10.0
-        self.declare_parameter('phi', 0.05)
+        # self.declare_parameter('phi', 0.05)
         self.declare_parameter('base_frame', 'robot_1')
 
         # Get parameters
@@ -193,8 +193,8 @@ class ModelSimulationNode(Node):
         self.lane_pub.publish(marker)
 
     def publish_to_sim(self, state):
-        # x, y, theta = self.frenet_to_cartesian(state)
-        x, y, theta, _ = state
+        x, y, theta = self.frenet_to_cartesian(state)
+        # x, y, theta, _ = state
         now = self.get_clock().now().to_msg()
 
         # Construct Quaternion
