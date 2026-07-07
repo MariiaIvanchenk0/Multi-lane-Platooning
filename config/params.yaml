@@ -4,7 +4,7 @@ model_simulation_node:
     beta: -0.01               # the unknown damping coefficient
     delta: -0.1                 # a fixed unknown disturbance
     wheelbase: 0.5              # wheelbase (L)
-    base_frame: "robot_1"       # name for this robot instance
+    base_frame: "robot_bs"       # name for this robot instance
 
     frequency: 20.0             # integration rate [Hz]
     s0: 0.0                     # initial s (longitudinal position)
@@ -14,7 +14,7 @@ model_simulation_node:
 
     # Dynamic parameters
     # torque: 100.0               # the input torque
-    phi: 0.05                   # the input steering angle
+    # phi: 0.05                   # the input steering angle
 
 longitudinal_controller_node:
   ros__parameters:
@@ -39,3 +39,17 @@ lateral_controller_node:
 
     k_a1: 1.5
     k_a2: 3.0
+
+formation_controller_node:
+  ros__parameters:
+    # id: 1.0
+    # neighbor_id: [2]    # IDs of topological neighbors
+    frequency: 20.0
+    namespace: "robot"
+    
+    k_s: 0.6
+    k_l: 0.1
+    k_n: 0.06           # Smooth deadzone design constant
+
+    v_f: 25.0           # Desired cruise speed (m/s)
+    n_bar: 0.4          # Bounded noise threshold (m)

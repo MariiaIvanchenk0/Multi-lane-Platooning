@@ -24,9 +24,9 @@ class LateralControllerNode(Node):
         super().__init__('lateral_controller_node')
         
         # Declare parameters
-        self.declare_parameter('k_a1', 1.0)
-        self.declare_parameter('k_a2', 2.0)
-        self.declare_parameter('frequency', 20.0)
+        self.declare_parameter('k_a1')
+        self.declare_parameter('k_a2')
+        self.declare_parameter('frequency')
 
         # Get parameters
         self.state = [0.0, 0.0, 0.0, 0.0]

@@ -33,23 +33,23 @@ class ModelSimulationNode(Node):
         super().__init__('model_simulation_node')
 
         # Declare parameters
-        self.declare_parameter('wheelbase', 0.5)
-        self.declare_parameter('frequency', 20.0)
+        self.declare_parameter('id')
+        self.declare_parameter('wheelbase')
+        self.declare_parameter('frequency')
 
-        self.declare_parameter('alpha', 0.012)
-        self.declare_parameter('beta', -0.01)
-        self.declare_parameter('delta', -0.1)
+        self.declare_parameter('alpha')
+        self.declare_parameter('beta')
+        self.declare_parameter('delta')
 
-        self.declare_parameter('s0', 0.0)
-        self.declare_parameter('l0', 0.0)
-        self.declare_parameter('psi0', 0.0)
-        self.declare_parameter('v0', 0.0)
+        self.declare_parameter('s0')
+        self.declare_parameter('l0')
+        self.declare_parameter('psi0')
+        self.declare_parameter('v0')
 
-        # self.declare_parameter('torque', 100.0) # 10.0
-        # self.declare_parameter('phi', 0.05)
-        self.declare_parameter('base_frame', 'robot_1')
+        self.declare_parameter('base_frame')
 
         # Get parameters
+        self.id = self.get_parameter('id').value
         self.L = self.get_parameter('wheelbase').value
         self.dt = 1.0 / self.get_parameter('frequency').value # period 
 
@@ -64,7 +64,7 @@ class ModelSimulationNode(Node):
             self.get_parameter('v0').value,
         ]
 
-        self.base_frame = self.get_parameter('base_frame').value
+        self.base_frame = self.get_parameter('base_frame').value + f"_{self.id}"
         self.T = 0.0
         self.phi = 0.0
 
@@ -72,9 +72,9 @@ class ModelSimulationNode(Node):
         self.torque_sub = self.create_subscription(Float64, 'cntl_torque', self.torque_callback, 10)
         self.phi_sub = self.create_subscription(Float64, 'cntl_phi', self.phi_callback, 10)
 
-        self.lane_pub = self.create_publisher(Marker, '/lane_marker', 10)
-        self.marker_pub = self.create_publisher(Marker, '/model_marker', 10)
-        self.state_pub = self.create_publisher(Float64MultiArray, '/vehicle_state', 10)
+        self.lane_pub = self.create_publisher(Marker, 'lane_marker', 10)
+        self.marker_pub = self.create_publisher(Marker, 'model_marker', 10)
+        self.state_pub = self.create_publisher(Float64MultiArray, 'vehicle_state', 10)
 
         self.tf_broadcaster = TransformBroadcaster(self)
         self.timer = self.create_timer(self.dt, self.step)

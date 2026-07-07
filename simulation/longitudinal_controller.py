@@ -28,26 +28,21 @@ class LongitudinalSimNode(Node):
         super().__init__('longitudinal_controller_node')
         
         # Declare parameters
-        self.declare_parameter('k_1', 30)
-        self.declare_parameter('k_2', 0.3)
+        self.declare_parameter('k_1')
+        self.declare_parameter('k_2')
         # self.declare_parameter('v_des', 25.0)
-        self.declare_parameter('frequency', 20.0)
+        self.declare_parameter('frequency')
 
-        self.declare_parameter('gamma_alpha', 0.001)
-        self.declare_parameter('gamma_beta', 0.0001)
-        self.declare_parameter('gamma_delta', 0.01)
+        self.declare_parameter('gamma_alpha')
+        self.declare_parameter('gamma_beta')
+        self.declare_parameter('gamma_delta')
         
-        self.declare_parameter('alpha_bar_hat', 1.0)    # Adaptive guess for (1 / alpha)
-        self.declare_parameter('beta_hat', -0.0001)     # Adaptive guess for aerodynamic drag coefficient
-        self.declare_parameter('delta_hat', -0.1)       # Adaptive guess for constant disturbance/friction
+        self.declare_parameter('alpha_bar_hat')    # Adaptive guess for (1 / alpha)
+        self.declare_parameter('beta_hat')     # Adaptive guess for aerodynamic drag coefficient
+        self.declare_parameter('delta_hat')       # Adaptive guess for constant disturbance/friction
 
         self.omega = 0.0          # Accumulated velocity error state
         self.state = [0.0, 0.0, 0.0, 0.0]
-
-        # self.current_v = 20.0
-        # self.true_alpha = 1.2e-3
-        # self.true_beta = -1.0e-4
-        # self.true_delta = -0.1
 
         # Get parameters
         self.k_1 = self.get_parameter('k_1').value
