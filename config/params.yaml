@@ -1,4 +1,4 @@
-model_simulation_node:
+/**/model_simulation_node:
   ros__parameters:
     alpha: 0.012                # the unknown input gain
     beta: -0.01               # the unknown damping coefficient
@@ -17,7 +17,7 @@ model_simulation_node:
     # torque: 100.0               # the input torque
     # phi: 0.05                   # the input steering angle
 
-longitudinal_controller_node:
+/**/longitudinal_controller_node:
   ros__parameters:
     gamma_alpha: 0.001
     gamma_beta: 0.0001
@@ -33,7 +33,7 @@ longitudinal_controller_node:
     beta_hat: -0.0001
     delta_hat: -0.1
     
-lateral_controller_node:
+/**/lateral_controller_node:
   ros__parameters:
     frequency: 50.0
     wheelbase: 0.5
@@ -42,7 +42,7 @@ lateral_controller_node:
     k_a1: 1.5
     k_a2: 3.0
 
-formation_controller_node:
+/**/formation_controller_node:
   ros__parameters:
     # id: 1.0
     # neighbor_id: [2]    # IDs of topological neighbors
@@ -56,7 +56,7 @@ formation_controller_node:
     v_f: 25.0           # Desired cruise speed (m/s)
     n_bar: 0.4          # Bounded noise threshold (m)
 
-road_adaptation_node:
+/**/road_adaptation_node:
   ros__parameters:
     R: 20.0
     frequency: 20.0

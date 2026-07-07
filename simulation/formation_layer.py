@@ -56,9 +56,7 @@ class FormationControllerNode(Node):
         self.neighbor_states = {nid: [0.0, 0.0, 0.0, 0.0] for nid in self.neighbor_ids}
         
         # Subscriptions
-        # (?)
-        # self.state_sub = self.create_subscription(Float64MultiArray, 'vehicle_state', self.state_callback, 10) 
-        
+        self.state_sub = self.create_subscription(Float64MultiArray, 'vehicle_state', self.state_callback, 10) 
         self.neighbor_subs = []
         for nid in self.neighbor_ids:
             topic_name = f'/{self.namespace}_{nid}/vehicle_state'
