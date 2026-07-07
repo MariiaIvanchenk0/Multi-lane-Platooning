@@ -40,14 +40,14 @@ class LongitudinalSimNode(Node):
         self.declare_parameter('alpha_bar_hat')    # Adaptive guess for (1 / alpha)
         self.declare_parameter('beta_hat')     # Adaptive guess for aerodynamic drag coefficient
         self.declare_parameter('delta_hat')       # Adaptive guess for constant disturbance/friction
-
+        
+        self.v_des = 0.0
         self.omega = 0.0          # Accumulated velocity error state
         self.state = [0.0, 0.0, 0.0, 0.0]
 
         # Get parameters
         self.k_1 = self.get_parameter('k_1').value
         self.k_2 = self.get_parameter('k_2').value
-        # self.v_des = self.get_parameter('v_des').value
 
         self.gamma_alpha = self.get_parameter('gamma_alpha').value
         self.gamma_beta = self.get_parameter('gamma_beta').value
@@ -58,6 +58,7 @@ class LongitudinalSimNode(Node):
         self.delta_hat = self.get_parameter('delta_hat').value
 
         # Publisher & Timer
+        self.vdes_sub = self.create_subscription(Float64, 'v_des', self.vdes_callback, 10)
         self.state_sub = self.create_subscription(Float64MultiArray, 'vehicle_state', self.state_callback, 10)
         self.torque_pub = self.create_publisher(Float64, 'cntl_torque', 10)
         self.dt = 1.0 / self.get_parameter('frequency').value # period 
@@ -66,15 +67,18 @@ class LongitudinalSimNode(Node):
     
     def state_callback(self, msg):
         self.state = msg.data
+    
+    def vdes_callback(self, msg):
+        self.v_des = msg.data
 
     def control_loop_callback(self):
         # NOTE: In production, these inputs should be fetched dynamically 
         v = self.state[3]
-        v_des = 15.0  # Current velocity (m/s)
+        # v_des = 15.0  # Current velocity (m/s)
         v_des_dot = 0.0   # Target acceleration (m/s^2)
         
         # --- Step 1: Calculate Velocity Error ---
-        e_v = v - v_des
+        e_v = v - self.v_des
         
         # --- Step 2: Calculate Tau (Intermediate Control Action) ---
         tau = (-self.k_1 * e_v 

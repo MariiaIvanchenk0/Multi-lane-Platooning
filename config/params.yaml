@@ -6,6 +6,7 @@ model_simulation_node:
     wheelbase: 0.5              # wheelbase (L)
     base_frame: "robot_bs"       # name for this robot instance
 
+    R: 20.0
     frequency: 20.0             # integration rate [Hz]
     s0: 0.0                     # initial s (longitudinal position)
     l0: 0.0                     # initial l (lateral position)
@@ -36,6 +37,7 @@ lateral_controller_node:
   ros__parameters:
     frequency: 50.0
     wheelbase: 0.5
+    R: 20.0
 
     k_a1: 1.5
     k_a2: 3.0
@@ -53,3 +55,9 @@ formation_controller_node:
 
     v_f: 25.0           # Desired cruise speed (m/s)
     n_bar: 0.4          # Bounded noise threshold (m)
+
+road_adaptation_node:
+  ros__parameters:
+    R: 20.0
+    frequency: 20.0
+    wheelbase: 0.5

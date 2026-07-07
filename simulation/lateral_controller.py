@@ -26,6 +26,8 @@ class LateralControllerNode(Node):
         # Declare parameters
         self.declare_parameter('k_a1')
         self.declare_parameter('k_a2')
+        self.declare_parameter('R')
+        self.declare_parameter('wheelbase')
         self.declare_parameter('frequency')
 
         # Get parameters
@@ -33,12 +35,15 @@ class LateralControllerNode(Node):
         self.dt = 1.0 / self.get_parameter('frequency').value # period      
         self.k_a1 = self.get_parameter('k_a1').value
         self.k_a2 = self.get_parameter('k_a2').value
+        self.R = self.get_parameter('R').value
+        self.L = self.get_parameter('wheelbase').value
         
         self.l_lane = 0.0
         self.l_des = 0.0
         
         # Publisher & Timer
         self.state_sub = self.create_subscription(Float64MultiArray, 'vehicle_state', self.state_callback, 10)
+        self.ldes_sub = self.create_subscription(Float64, 'l_des', self.ldes_callback, 10)
         self.state_pub = self.create_publisher(Float64MultiArray, 'updated_state', 10)
         self.steering_pub = self.create_publisher(Float64, 'cntl_phi', 10)
         self.timer = self.create_timer(self.dt, self.control_loop_callback)
@@ -47,13 +52,16 @@ class LateralControllerNode(Node):
     def state_callback(self, msg):
         self.state = msg.data
 
+    def ldes_callback(self, msg):
+        self.l_des = msg.data
+
     def control_loop_callback(self):
         l = self.state[1]
         psi = self.state[2]
         
         # --- Step 1: Calculate Errors ---
         e_psi = -psi
-        e_lat = self.l_lane - self.l_des - l
+        e_lat = self.l_des - l # self.l_lane - self.l_des - l
         
         # --- Step 2: Calculate Steering Angle Components ---
         numerator = -math.cos(e_psi) * e_lat - (self.k_a1 + self.k_a2) * math.sin(e_psi)
@@ -64,9 +72,7 @@ class LateralControllerNode(Node):
 
         phi_feedback = math.atan(numerator / denominator)
 
-        L = 0.5
-        R = 20.0
-        phi_feedforward = math.atan(L / R)
+        phi_feedforward = math.atan(self.L / self.R)
         phi = phi_feedback + phi_feedforward
         
         MAX_STEER = math.radians(35.0)

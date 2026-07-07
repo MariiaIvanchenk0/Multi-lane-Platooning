@@ -36,6 +36,7 @@ class ModelSimulationNode(Node):
         self.declare_parameter('id')
         self.declare_parameter('wheelbase')
         self.declare_parameter('frequency')
+        self.declare_parameter('R')
 
         self.declare_parameter('alpha')
         self.declare_parameter('beta')
@@ -52,6 +53,7 @@ class ModelSimulationNode(Node):
         self.id = self.get_parameter('id').value
         self.L = self.get_parameter('wheelbase').value
         self.dt = 1.0 / self.get_parameter('frequency').value # period 
+        self.R = self.get_parameter('R').value
 
         self.alpha = self.get_parameter('alpha').value
         self.beta = self.get_parameter('beta').value
@@ -88,8 +90,7 @@ class ModelSimulationNode(Node):
         # l_dot = v * math.sin(psi)
         # psi_dot = (v / self.L) * math.tan(self.phi)
 
-        R = 20.0
-        kappa_r = 1.0 / R
+        kappa_r = 1.0 / self.R
         
         denominator = 1.0 - kappa_r * l
         if abs(denominator) < 1e-6:
@@ -140,15 +141,15 @@ class ModelSimulationNode(Node):
         "Converts Frenet coordinates (s, l) to Global Cartesian (x, y, theta)"
 
         s, l, psi, v = state
-        R = 20.0  # Constant road curve radius from MeereFidanHeemels2023_IFAC.pdf
-        kappa_r = 1.0 / R
+          # Constant road curve radius from MeereFidanHeemels2023_IFAC.pdf
+        kappa_r = 1.0 / self.R
 
         v_lat = v * math.sin(psi)
         
         # Compute reference path properties at 's'
-        theta_r = s / R
-        x_r = R * math.sin(theta_r)
-        y_r = R - R * math.cos(theta_r)
+        theta_r = s /  self.R
+        x_r = self.R * math.sin(theta_r)
+        y_r = self.R - self.R * math.cos(theta_r)
         
         # Position Formulas
         x = x_r - l * math.sin(theta_r)
@@ -184,16 +185,14 @@ class ModelSimulationNode(Node):
         marker.color.g = 1.0
         marker.color.b = 0.0
         marker.color.a = 0.6
-        
-        R = 20.0  # Road radius from the paper framework
         num_points = 200
         
         # Loop 360 degrees around the circle to generate the track points
         for i in range(num_points + 1):
             theta_r = (2.0 * math.pi / num_points) * i
             p = Point()
-            p.x = R * math.sin(theta_r)
-            p.y = R - R * math.cos(theta_r)
+            p.x = self.R * math.sin(theta_r)
+            p.y = self.R - self.R * math.cos(theta_r)
             p.z = 0.0
             marker.points.append(p)
             

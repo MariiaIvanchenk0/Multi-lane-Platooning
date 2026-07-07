@@ -28,7 +28,6 @@ def generate_launch_description():
             Node(
                 package='simulation',
                 executable='model_simulation_node',
-                name='model_simulation',
                 parameters=[{
                     'id': robot_id,
                     's0': s0,
@@ -57,6 +56,15 @@ def generate_launch_description():
                     'k_2': 0.3
                 }, params_config]
             ),
+
+            Node(
+                package='simulation',
+                executable='road_adaptation_node',
+                name='road_adaptation',
+                parameters=[{
+                    'l0': l0,
+                }, params_config]
+            ),
             
             Node(
                 package='simulation',
@@ -69,15 +77,15 @@ def generate_launch_description():
                 }, params_config]
             ),
         ])
-
-        rviz = ExecuteProcess(
-            cmd = [
-                'ros2', 'run', 'rviz2', 'rviz2', '-d', rviz_config
-            ], 
-            output = 'screen'
-        )
         
         launch_nodes.append(robot_group)
-        launch_nodes.append(rviz)
+
+    rviz = ExecuteProcess(
+        cmd = [
+            'ros2', 'run', 'rviz2', 'rviz2', '-d', rviz_config
+        ], 
+        output = 'screen'
+    )
+    launch_nodes.append(rviz)
 
     return LaunchDescription(launch_nodes)

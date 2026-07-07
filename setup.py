@@ -17,7 +17,7 @@ setup(
         (os.path.join('share', package_name, 'launch'), glob(os.path.join('launch', 'model.launch*.[pxy][yma]*'))),
         (os.path.join('share', package_name, 'launch'), glob(os.path.join('launch', 'longitudinal.launch*.[pxy][yma]*'))),
         (os.path.join('share', package_name, 'launch'), glob(os.path.join('launch', 'lateral.launch*.[pxy][yma]*'))),
-        (os.path.join('share', package_name, 'launch'), glob(os.path.join('launch', 'formation.launch*.[pxy][yma]*'))),
+        (os.path.join('share', package_name, 'launch'), glob(os.path.join('launch', 'platoon.launch*.[pxy][yma]*'))),
 
         (os.path.join('share', package_name, 'config'), 
          glob(os.path.join('params', '*.yaml')) + 
@@ -35,6 +35,7 @@ setup(
             'model_simulation_node = simulation.model_simulation:main',
             'longitudinal_controller_node = simulation.longitudinal_controller:main',
             'lateral_controller_node = simulation.lateral_controller:main',
+            'road_adaptation_node = simulation.road_adaptation:main',
             'formation_controller_node = simulation.formation_layer:main',
         ],
     },

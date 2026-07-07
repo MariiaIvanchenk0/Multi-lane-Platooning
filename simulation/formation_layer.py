@@ -159,7 +159,6 @@ class FormationControllerNode(Node):
             # Fetch target formation offset from configuration matrix
             D_ji_s, D_ji_l = self.desired_offsets.get(nid, [0.0, 0.0])
             
-            # Build error terms following Equations 20 & 22
             total_error_s += w_s[nid] * (d_ji_s_dict[nid] - D_ji_s)
             total_error_l += w_l[nid] * (d_ji_l_dict[nid] - D_ji_l)
 
