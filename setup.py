@@ -20,8 +20,8 @@ setup(
         (os.path.join('share', package_name, 'launch'), glob(os.path.join('launch', 'platoon.launch*.[pxy][yma]*'))),
 
         (os.path.join('share', package_name, 'config'), 
-         glob(os.path.join('params', '*.yaml')) + 
-         glob(os.path.join('config_sim', '*.rviz')))
+         glob('config/*.yaml')) # + 
+        #  glob(os.path.join('config_sim', '*.rviz')))
     ],
     install_requires=['setuptools'],
     zip_safe=True,

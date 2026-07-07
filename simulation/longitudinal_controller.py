@@ -28,18 +28,17 @@ class LongitudinalSimNode(Node):
         super().__init__('longitudinal_controller_node')
         
         # Declare parameters
-        self.declare_parameter('k_1')
-        self.declare_parameter('k_2')
-        # self.declare_parameter('v_des', 25.0)
-        self.declare_parameter('frequency')
+        self.declare_parameter('k_1', 5.0)
+        self.declare_parameter('k_2', 0.5)
+        self.declare_parameter('frequency', 20.0)
 
-        self.declare_parameter('gamma_alpha')
-        self.declare_parameter('gamma_beta')
-        self.declare_parameter('gamma_delta')
+        self.declare_parameter('gamma_alpha', 0.001)
+        self.declare_parameter('gamma_beta', 0.0001)
+        self.declare_parameter('gamma_delta', 0.01)
         
-        self.declare_parameter('alpha_bar_hat')    # Adaptive guess for (1 / alpha)
-        self.declare_parameter('beta_hat')     # Adaptive guess for aerodynamic drag coefficient
-        self.declare_parameter('delta_hat')       # Adaptive guess for constant disturbance/friction
+        self.declare_parameter('alpha_bar_hat', 1.0)    # Adaptive guess for (1 / alpha)
+        self.declare_parameter('beta_hat', -0.0001)     # Adaptive guess for aerodynamic drag coefficient
+        self.declare_parameter('delta_hat', -0.1)       # Adaptive guess for constant disturbance/friction
         
         self.v_des = 0.0
         self.omega = 0.0          # Accumulated velocity error state
@@ -63,7 +62,7 @@ class LongitudinalSimNode(Node):
         self.torque_pub = self.create_publisher(Float64, 'cntl_torque', 10)
         self.dt = 1.0 / self.get_parameter('frequency').value # period 
         self.timer = self.create_timer(self.dt, self.control_loop_callback)
-        self.get_logger().info("Longitudinal Adaptive Controller Node Initialized.")
+        # self.get_logger().info("Longitudinal Adaptive Controller Node Initialized.")
     
     def state_callback(self, msg):
         self.state = msg.data
@@ -74,7 +73,6 @@ class LongitudinalSimNode(Node):
     def control_loop_callback(self):
         # NOTE: In production, these inputs should be fetched dynamically 
         v = self.state[3]
-        # v_des = 15.0  # Current velocity (m/s)
         v_des_dot = 0.0   # Target acceleration (m/s^2)
         
         # --- Step 1: Calculate Velocity Error ---
@@ -109,7 +107,10 @@ class LongitudinalSimNode(Node):
         torque = self.alpha_bar_hat * tau
 
         MAX_TORQUE = 250.0
-        torque = max(min(torque, MAX_TORQUE), -MAX_TORQUE)
+        MIN_TORQUE = 5.0
+        torque = max(min(torque, MAX_TORQUE), MIN_TORQUE)
+
+        # self.get_logger().info(f"v_des: {self.v_des}")
 
         # v_dot = (self.true_alpha * torque) + (self.true_beta * (v **2)) + self.true_delta
         # self.v += v_dot * self.dt

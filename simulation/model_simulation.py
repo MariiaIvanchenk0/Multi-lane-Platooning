@@ -34,20 +34,20 @@ class ModelSimulationNode(Node):
 
         # Declare parameters
         self.declare_parameter('id')
-        self.declare_parameter('wheelbase')
-        self.declare_parameter('frequency')
-        self.declare_parameter('R')
+        self.declare_parameter('wheelbase', 0.5)
+        self.declare_parameter('frequency', 20.0)
+        self.declare_parameter('R', 20.0)
 
-        self.declare_parameter('alpha')
-        self.declare_parameter('beta')
-        self.declare_parameter('delta')
+        self.declare_parameter('alpha', 0.012)
+        self.declare_parameter('beta', -0.01)
+        self.declare_parameter('delta', -0.1)
 
-        self.declare_parameter('s0')
-        self.declare_parameter('l0')
-        self.declare_parameter('psi0')
-        self.declare_parameter('v0')
+        self.declare_parameter('s0', 0.0)
+        self.declare_parameter('l0', 0.0)
+        self.declare_parameter('psi0', 0.0)
+        self.declare_parameter('v0', 0.0)
 
-        self.declare_parameter('base_frame')
+        self.declare_parameter('base_frame', 'robot_bs')
 
         # Get parameters
         self.id = self.get_parameter('id').value
@@ -86,10 +86,6 @@ class ModelSimulationNode(Node):
         "Return the state derivative [s_dot, l_dot, psi_dot, v_dot]."
         _, l, psi, v = state
 
-        # s_dot = v * math.cos(psi)
-        # l_dot = v * math.sin(psi)
-        # psi_dot = (v / self.L) * math.tan(self.phi)
-
         kappa_r = 1.0 / self.R
         
         denominator = 1.0 - kappa_r * l
@@ -99,6 +95,7 @@ class ModelSimulationNode(Node):
         s_dot = (v * math.cos(psi)) / denominator
         l_dot = v * math.sin(psi)
         psi_dot = ((v / self.L) * math.tan(self.phi)) - (kappa_r * s_dot)
+        # self.get_logger().info(f"v: {v}, T: {self.T}")
         v_dot = self.alpha * self.T + self.beta * (v**2) + self.delta
 
         return [s_dot, l_dot, psi_dot, v_dot]

@@ -24,11 +24,11 @@ class LateralControllerNode(Node):
         super().__init__('lateral_controller_node')
         
         # Declare parameters
-        self.declare_parameter('k_a1')
-        self.declare_parameter('k_a2')
-        self.declare_parameter('R')
-        self.declare_parameter('wheelbase')
-        self.declare_parameter('frequency')
+        self.declare_parameter('k_a1', 1.5)
+        self.declare_parameter('k_a2', 3.0)
+        self.declare_parameter('R', 20.0)
+        self.declare_parameter('wheelbase', 0.5)
+        self.declare_parameter('frequency', 20.0)
 
         # Get parameters
         self.state = [0.0, 0.0, 0.0, 0.0]
@@ -47,7 +47,7 @@ class LateralControllerNode(Node):
         self.state_pub = self.create_publisher(Float64MultiArray, 'updated_state', 10)
         self.steering_pub = self.create_publisher(Float64, 'cntl_phi', 10)
         self.timer = self.create_timer(self.dt, self.control_loop_callback)
-        self.get_logger().info("Lateral Geometric Controller Node Initialized.")
+        # self.get_logger().info("Lateral Geometric Controller Node Initialized.")
     
     def state_callback(self, msg):
         self.state = msg.data
@@ -89,11 +89,13 @@ class LateralControllerNode(Node):
         msg = Float64()
         msg.data = phi
         self.steering_pub.publish(msg)
+
+        self.get_logger().info(f"phi: {phi}, l_des: {self.l_des}")
         
-        self.get_logger().info(
-            f"Lat Error: {e_lat:.3f}m | Yaw Error: {math.degrees(e_psi):.1f}° | "
-            f"Steer Output (phi): {math.degrees(phi):.1f}°"
-        )
+        # self.get_logger().info(
+        #     f"Lat Error: {e_lat:.3f}m | Yaw Error: {math.degrees(e_psi):.1f}° | "
+        #     f"Steer Output (phi): {math.degrees(phi):.1f}°"
+        # )
 
 def main(args=None):
     rclpy.init(args=args)

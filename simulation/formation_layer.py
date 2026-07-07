@@ -25,13 +25,13 @@ class FormationControllerNode(Node):
         # Declare Parameters 
         self.declare_parameter('id')
         self.declare_parameter('neighbor_ids')
-        self.declare_parameter('frequency')
+        self.declare_parameter('frequency', 20.0)
         self.declare_parameter('namespace')
-        self.declare_parameter('k_s')
-        self.declare_parameter('k_l')
-        self.declare_parameter('k_n')
-        self.declare_parameter('v_f')
-        self.declare_parameter('n_bar')
+        self.declare_parameter('k_s', 0.6)
+        self.declare_parameter('k_l', 0.1)
+        self.declare_parameter('k_n', 0.06)
+        self.declare_parameter('v_f', 25.0)
+        self.declare_parameter('n_bar', 0.4)
         
         # Get Parameters
         self.id = self.get_parameter('id').value
@@ -46,9 +46,9 @@ class FormationControllerNode(Node):
         self.deg_i = len(self.neighbor_ids)
         self.desired_offsets = {
             2: [25.0, 0.0],
-            3: [50.0, 0.0],
-            4: [10.0, -3.4],
-            5: [45.0, -4.0]
+            # 3: [50.0, 0.0],
+            # 4: [10.0, -3.4],
+            # 5: [45.0, -4.0]
         }
 
         self.dt = 1.0 / self.get_parameter('frequency').value # period
@@ -71,7 +71,7 @@ class FormationControllerNode(Node):
         # Publisher & Timer
         self.kinematic_pub = self.create_publisher(Float64MultiArray, 'kinematic_input', 10)
         self.timer = self.create_timer(self.dt, self.control_loop_callback)
-        self.get_logger().info(f"Formation Controller Layer Initialized for Robot {self.id} (deg: {self.deg_i}).")
+        # self.get_logger().info(f"Formation Controller Layer Initialized for Robot {self.id} (deg: {self.deg_i}).")
 
     def state_callback(self, msg):
         self.state = msg.data
@@ -82,7 +82,7 @@ class FormationControllerNode(Node):
     def smooth_threshold_function(self, x):
         """Implements the robust smooth deadzone filter T_n(x) from Equation 21."""
         abs_x = abs(x)
-        threshold_bound = self.deg_i * self.n_bar  # deg(i) * n_bar
+        threshold_bound = self.deg_i * self.n_bar
         
         # Zone 1: Error sits entirely inside the noise floor -> block it
         if abs_x <= threshold_bound:
@@ -152,13 +152,19 @@ class FormationControllerNode(Node):
         # --- Step 3: Compute Summed Weighted Position Errors ---
         total_error_s = 0.0
         total_error_l = 0.0
+
+        # ego_offset_s, ego_offset_l = self.desired_offsets.get(self.id, [0.0, 0.0])
         
         for nid in self.neighbor_ids:
             # Fetch target formation offset from configuration matrix
             D_ji_s, D_ji_l = self.desired_offsets.get(nid, [0.0, 0.0])
-            
-            total_error_s += w_s[nid] * (d_ji_s_dict[nid] - D_ji_s)
-            total_error_l += w_l[nid] * (d_ji_l_dict[nid] - D_ji_l)
+
+            # neighbor_offset_s, neighbor_offset_l = self.desired_offsets.get(nid, [0.0, 0.0])
+            # D_ji_s = neighbor_offset_s - ego_offset_s
+            # D_ji_l = neighbor_offset_l - ego_offset_l
+
+            total_error_s += w_s[nid] * (D_ji_s - d_ji_s_dict[nid]) #(d_ji_s_dict[nid] - D_ji_s)
+            total_error_l += w_l[nid] * (D_ji_l - d_ji_l_dict[nid]) # (d_ji_l_dict[nid] - D_ji_l) 
 
         # --- Step 4: Apply Noise Filter & Generate Kinematic Velocity Outputs ---
         filtered_error_s = self.smooth_threshold_function(total_error_s)

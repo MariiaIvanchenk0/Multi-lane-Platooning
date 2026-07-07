@@ -20,9 +20,9 @@ class RoadAdaptationNode(Node):
         super().__init__('road_adaptation_node')
 
         # Declare Parameters 
-        self.declare_parameter('R')
+        self.declare_parameter('R', 20.0)
         self.declare_parameter('l0', 0.0)
-        self.declare_parameter('frequency')
+        self.declare_parameter('frequency', 20.0)
 
         # Get Parameters
         self.R = self.get_parameter('R').value
@@ -39,7 +39,7 @@ class RoadAdaptationNode(Node):
         self.l_des_pub = self.create_publisher(Float64, 'l_des', 10)
 
         self.timer = self.create_timer(self.dt, self.control_loop_callback)
-        self.get_logger().info(f"Road Adaptation Layer Initialized.")
+        # self.get_logger().info(f"Road Adaptation Layer Initialized.")
 
     def kinematic_callback(self, msg):
         self.kinematic = msg.data
