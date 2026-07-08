@@ -30,7 +30,7 @@ class FormationControllerNode(Node):
         self.declare_parameter('k_s', 0.6)
         self.declare_parameter('k_l', 0.1)
         self.declare_parameter('k_n', 0.06)
-        self.declare_parameter('v_f', 25.0)
+        self.declare_parameter('v_f', 15.0)
         self.declare_parameter('n_bar', 0.4)
         
         # Get Parameters
@@ -45,6 +45,7 @@ class FormationControllerNode(Node):
         
         self.deg_i = len(self.neighbor_ids)
         self.desired_offsets = {
+            1: [0.0, 0.0],
             2: [25.0, 0.0],
             # 3: [50.0, 0.0],
             # 4: [10.0, -3.4],
@@ -163,8 +164,8 @@ class FormationControllerNode(Node):
             # D_ji_s = neighbor_offset_s - ego_offset_s
             # D_ji_l = neighbor_offset_l - ego_offset_l
 
-            total_error_s += w_s[nid] * (D_ji_s - d_ji_s_dict[nid]) #(d_ji_s_dict[nid] - D_ji_s)
-            total_error_l += w_l[nid] * (D_ji_l - d_ji_l_dict[nid]) # (d_ji_l_dict[nid] - D_ji_l) 
+            total_error_s += w_s[nid] * (d_ji_s_dict[nid] - D_ji_s)  #(D_ji_s - d_ji_s_dict[nid]) #
+            total_error_l += w_l[nid] * (d_ji_l_dict[nid] - D_ji_l)  #(D_ji_l - d_ji_l_dict[nid]) # 
 
         # --- Step 4: Apply Noise Filter & Generate Kinematic Velocity Outputs ---
         filtered_error_s = self.smooth_threshold_function(total_error_s)
@@ -172,6 +173,11 @@ class FormationControllerNode(Node):
         
         u_is = self.k_s * filtered_error_s + self.v_f
         u_il = self.k_l * filtered_error_l
+
+        U_MIN = 10.0
+        U_MAX = 40.0
+        u_is = max(min(u_is, U_MAX), U_MIN)
+        u_il = max(min(u_il, 5.0), -5.0)
         
         # --- Step 5: Publish Control Vector ---
         input_msg = Float64MultiArray()

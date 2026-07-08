@@ -51,7 +51,7 @@ class RoadAdaptationNode(Node):
         kappa_r = 1.0 / self.R
         current_l = self.state[1]
         
-        v_i_des = self.kinematic[0] * (1.0 - kappa_r * current_l)
+        v_i_des = self.kinematic[0] * (1.0 + kappa_r * current_l)
         self.l_i_des += self.kinematic[1] * self.dt
         
         v_msg = Float64()

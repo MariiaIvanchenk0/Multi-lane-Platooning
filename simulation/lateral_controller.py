@@ -61,7 +61,7 @@ class LateralControllerNode(Node):
         
         # --- Step 1: Calculate Errors ---
         e_psi = -psi
-        e_lat = self.l_des - l # self.l_lane - self.l_des - l
+        e_lat = self.l_lane - self.l_des - l  #self.l_des - l 
         
         # --- Step 2: Calculate Steering Angle Components ---
         numerator = -math.cos(e_psi) * e_lat - (self.k_a1 + self.k_a2) * math.sin(e_psi)
@@ -90,7 +90,7 @@ class LateralControllerNode(Node):
         msg.data = phi
         self.steering_pub.publish(msg)
 
-        self.get_logger().info(f"phi: {phi}, l_des: {self.l_des}")
+        # self.get_logger().info(f"phi: {phi}, l_des: {self.l_des}")
         
         # self.get_logger().info(
         #     f"Lat Error: {e_lat:.3f}m | Yaw Error: {math.degrees(e_psi):.1f}° | "
