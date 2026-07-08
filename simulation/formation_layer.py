@@ -26,7 +26,7 @@ class FormationControllerNode(Node):
         self.declare_parameter('id')
         self.declare_parameter('neighbor_ids')
         self.declare_parameter('frequency', 20.0)
-        self.declare_parameter('namespace')
+        self.declare_parameter('namespace', 'robot')
         self.declare_parameter('k_s', 0.6)
         self.declare_parameter('k_l', 0.1)
         self.declare_parameter('k_n', 0.06)
@@ -177,7 +177,7 @@ class FormationControllerNode(Node):
         U_MIN = 10.0
         U_MAX = 40.0
         u_is = max(min(u_is, U_MAX), U_MIN)
-        u_il = max(min(u_il, 5.0), -5.0)
+        # u_il = max(min(u_il, 5.0), -5.0)
         
         # --- Step 5: Publish Control Vector ---
         input_msg = Float64MultiArray()

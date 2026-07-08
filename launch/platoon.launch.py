@@ -8,18 +8,18 @@ params_config = os.path.join(get_package_share_directory('simulation'), 'config'
 rviz_config = os.path.join(get_package_share_directory('simulation'), 'config', 'config_sim.rviz')
 
 def generate_launch_description():
-    # [robot_id, initial_s, initial_l, [neighbor_ids]]
+    # [robot_id, initial_s, initial_l, [neighbor_ids], assigned_lane]
     namespace = "robot"
     platoon_config = [
-        [1,  0.0, 0.0, [2]], # [2, 4]
-        [2, 5.0, 0.0, [1]],  #[1, 3, 5]
+        [1,  0.0, 0.0, [2], 0.0], # [2, 4]
+        [2, 5.0, 0.0, [1], 0.0],  #[1, 3, 5]
         # [3, 48.0,  0.5, [2, 5]],
         # [4, 10.0, -3.4, [1, 5]],
         # [5, 45.0, -4.0, [2, 3, 4]]
     ]
 
     launch_nodes = []
-    for robot_id, s0, l0, neighbors in platoon_config:
+    for robot_id, s0, l0, neighbors, lane in platoon_config:
         namespace_string = f"{namespace}_{robot_id}"
         
         robot_group = GroupAction([
@@ -43,7 +43,8 @@ def generate_launch_description():
                 name='lateral_controller',
                 parameters=[params_config, {
                     'k_a1': 1.0,
-                    'k_a2': 2.0
+                    'k_a2': 2.0,
+                    'l_lane': lane,
                 }]
             ),
             

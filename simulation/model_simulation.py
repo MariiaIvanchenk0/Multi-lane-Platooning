@@ -34,7 +34,7 @@ class ModelSimulationNode(Node):
 
         # Declare parameters
         self.declare_parameter('id')
-        self.declare_parameter('wheelbase', 0.5)
+        self.declare_parameter('wheelbase', 2.5)
         self.declare_parameter('frequency', 20.0)
         self.declare_parameter('R', 20.0)
 
@@ -84,19 +84,14 @@ class ModelSimulationNode(Node):
     # RK4 Integration Layer:
     def dynamics(self, state):
         "Return the state derivative [s_dot, l_dot, psi_dot, v_dot]."
-        _, l, psi, v = state
-
-        kappa_r = 1.0 / self.R
-        
-        denominator = 1.0 - kappa_r * l
-        if abs(denominator) < 1e-6:
-            denominator = 1e-6
+        _, _, psi, v = state
             
-        s_dot = (v * math.cos(psi)) / denominator
+        s_dot = v * math.cos(psi)
         l_dot = v * math.sin(psi)
-        psi_dot = ((v / self.L) * math.tan(self.phi)) - (kappa_r * s_dot)
-        # self.get_logger().info(f"v: {v}, T: {self.T}")
+        psi_dot = ((v / self.L) * math.tan(self.phi))
         v_dot = self.alpha * self.T + self.beta * (v**2) + self.delta
+
+        # self.get_logger().info(f"v: {v}, T: {self.T}")
 
         return [s_dot, l_dot, psi_dot, v_dot]
 
@@ -136,30 +131,18 @@ class ModelSimulationNode(Node):
 
     def frenet_to_cartesian(self, state):
         "Converts Frenet coordinates (s, l) to Global Cartesian (x, y, theta)"
-
-        s, l, psi, v = state
-          # Constant road curve radius from MeereFidanHeemels2023_IFAC.pdf
-        kappa_r = 1.0 / self.R
-
-        v_lat = v * math.sin(psi)
+        s, l, psi, _ = state
         
         # Compute reference path properties at 's'
-        theta_r = s /  self.R
+        theta_r = s / self.R
         x_r = self.R * math.sin(theta_r)
         y_r = self.R - self.R * math.cos(theta_r)
         
         # Position Formulas
         x = x_r - l * math.sin(theta_r)
         y = y_r + l * math.cos(theta_r)
-        
-        # Orientation & Velocity Formulas
-        # s_dot = v_long, d_dot = v_lat
-        denominator = 1.0 - kappa_r * l
-        
-        if abs(denominator) < 1e-6:
-            denominator = 1e-6
             
-        global_theta = theta_r + math.atan2(v_lat, denominator)
+        global_theta = theta_r + psi
         
         return x, y, global_theta
     

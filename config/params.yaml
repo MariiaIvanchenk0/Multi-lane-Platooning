@@ -3,11 +3,11 @@ model_simulation_node:
     alpha: 0.012                # the unknown input gain
     beta: -0.01               # the unknown damping coefficient
     delta: -0.1                 # a fixed unknown disturbance
-    wheelbase: 0.5              # wheelbase (L)
+    wheelbase: 2.5              # wheelbase (L)
     base_frame: "robot_bs"       # name for this robot instance
 
     R: 20.0
-    frequency: 20.0             # integration rate [Hz]
+    frequency: 100.0             # integration rate [Hz]
     s0: 0.0                     # initial s (longitudinal position)
     l0: 0.0                     # initial l (lateral position)
     psi0: 0.0                   # initial psi (yaw/heading angle)
@@ -36,7 +36,7 @@ longitudinal_controller_node:
 lateral_controller_node:
   ros__parameters:
     frequency: 20.0
-    wheelbase: 0.5
+    wheelbase: 2.5
     R: 20.0
 
     k_a1: 1.5

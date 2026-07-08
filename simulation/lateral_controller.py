@@ -24,6 +24,7 @@ class LateralControllerNode(Node):
         super().__init__('lateral_controller_node')
         
         # Declare parameters
+        self.declare_parameter('l_lane', 0.0)
         self.declare_parameter('k_a1', 1.5)
         self.declare_parameter('k_a2', 3.0)
         self.declare_parameter('R', 20.0)
@@ -32,13 +33,13 @@ class LateralControllerNode(Node):
 
         # Get parameters
         self.state = [0.0, 0.0, 0.0, 0.0]
-        self.dt = 1.0 / self.get_parameter('frequency').value # period      
+        self.dt = 1.0 / self.get_parameter('frequency').value # period   
+        self.l_lane = self.get_parameter('l_lane').value   
         self.k_a1 = self.get_parameter('k_a1').value
         self.k_a2 = self.get_parameter('k_a2').value
         self.R = self.get_parameter('R').value
         self.L = self.get_parameter('wheelbase').value
         
-        self.l_lane = 0.0
         self.l_des = 0.0
         
         # Publisher & Timer
@@ -61,7 +62,7 @@ class LateralControllerNode(Node):
         
         # --- Step 1: Calculate Errors ---
         e_psi = -psi
-        e_lat = self.l_lane - self.l_des - l  #self.l_des - l 
+        e_lat = self.l_lane - self.l_des - l  # self.l_des - l 
         
         # --- Step 2: Calculate Steering Angle Components ---
         numerator = -math.cos(e_psi) * e_lat - (self.k_a1 + self.k_a2) * math.sin(e_psi)
@@ -90,7 +91,7 @@ class LateralControllerNode(Node):
         msg.data = phi
         self.steering_pub.publish(msg)
 
-        # self.get_logger().info(f"phi: {phi}, l_des: {self.l_des}")
+        self.get_logger().info(f"phi: {phi}, l_des: {self.l_des}")
         
         # self.get_logger().info(
         #     f"Lat Error: {e_lat:.3f}m | Yaw Error: {math.degrees(e_psi):.1f}° | "

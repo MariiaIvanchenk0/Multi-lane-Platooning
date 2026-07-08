@@ -110,7 +110,7 @@ class LongitudinalSimNode(Node):
         MIN_TORQUE = 5.0
         torque = max(min(torque, MAX_TORQUE), MIN_TORQUE)
 
-        self.get_logger().info(f"v_des: {self.v_des}")
+        # self.get_logger().info(f"v_des: {self.v_des}")
 
         # v_dot = (self.true_alpha * torque) + (self.true_beta * (v **2)) + self.true_delta
         # self.v += v_dot * self.dt
