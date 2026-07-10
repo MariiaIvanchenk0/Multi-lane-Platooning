@@ -44,7 +44,7 @@ class ModelSimulationNode(Node):
         self.declare_parameter('s0', 0.0)
         self.declare_parameter('l0', 0.0)
         self.declare_parameter('psi0', 0.0)
-        self.declare_parameter('v0', 25.0) # Added baseline initial velocity parameter
+        self.declare_parameter('v0', 0.0)
 
         self.declare_parameter('wheelbase', 2.5)
         self.declare_parameter('base_frame', 'robot_bs')
@@ -116,9 +116,7 @@ class ModelSimulationNode(Node):
     def step(self):
         """Timer callback: integrate state components and publish out."""
         self.state = self.rk4_step(self.state, self.dt)
-        
-        # Wrap heading angle to [-pi, pi]
-        self.state[2] = math.atan2(math.sin(self.state[2]), math.cos(self.state[2]))  
+        self.state[2] = math.atan2(math.sin(self.state[2]), math.cos(self.state[2]))  # wrap heading angle to [-pi, pi]
 
         # Publish state array [s, l, psi, v]
         msg = Float64MultiArray()

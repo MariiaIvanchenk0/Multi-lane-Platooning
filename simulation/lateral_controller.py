@@ -24,31 +24,42 @@ class LateralControllerNode(Node):
         super().__init__('lateral_controller_node')
         
         # Declare parameters
-        self.declare_parameter('l_lane', 0.0)
         self.declare_parameter('k_a1', 1.5)
         self.declare_parameter('k_a2', 3.0)
-        self.declare_parameter('R', 20.0)
-        self.declare_parameter('wheelbase', 0.5)
+        self.declare_parameter('l_lane', 0.0)
+        self.declare_parameter('wheelbase', 2.5)
         self.declare_parameter('frequency', 20.0)
 
         # Get parameters
-        self.state = [0.0, 0.0, 0.0, 0.0]
-        self.dt = 1.0 / self.get_parameter('frequency').value # period   
-        self.l_lane = self.get_parameter('l_lane').value   
         self.k_a1 = self.get_parameter('k_a1').value
         self.k_a2 = self.get_parameter('k_a2').value
-        self.R = self.get_parameter('R').value
+        self.l_lane = self.get_parameter('l_lane').value   
         self.L = self.get_parameter('wheelbase').value
+        self.dt = 1.0 / self.get_parameter('frequency').value # period
+
+        self.reference_path = self.generate_custom_path()
         
         self.l_des = 0.0
+        self.state = [0.0, 0.0, 0.0, 0.0]
         
-        # Publisher & Timer
+        # Sybscriptions & Publishers & Timer
         self.state_sub = self.create_subscription(Float64MultiArray, 'vehicle_state', self.state_callback, 10)
         self.ldes_sub = self.create_subscription(Float64, 'l_des', self.ldes_callback, 10)
+
         self.state_pub = self.create_publisher(Float64MultiArray, 'updated_state', 10)
         self.steering_pub = self.create_publisher(Float64, 'cntl_phi', 10)
+
         self.timer = self.create_timer(self.dt, self.control_loop_callback)
         # self.get_logger().info("Lateral Geometric Controller Node Initialized.")
+
+    def generate_custom_path(self):
+        path_points = []
+        num_points = 500
+        for i in range(num_points + 1):
+            theta_r = (2.0 * math.pi / num_points) * i
+            s = self.R * theta_r
+            path_points.append({'theta': theta_r, 's': s})
+        return path_points
     
     def state_callback(self, msg):
         self.state = msg.data
@@ -57,46 +68,38 @@ class LateralControllerNode(Node):
         self.l_des = msg.data
 
     def control_loop_callback(self):
+        s = self.state[0]
         l = self.state[1]
         psi = self.state[2]
         
+        # --- Step 1: Wrap 's' for multi-lap lookup ---
+        s_wrapped = s % self.total_track_length
+        closest_wp = min(self.reference_path, key=lambda wp: abs(wp['s'] - s_wrapped))
+        theta_r = closest_wp['theta']
+
+        # --- Step 2: Calculate Errors ---
+        e_psi = theta_r - psi
+        e_psi = math.atan2(math.sin(e_psi), math.cos(e_psi))
+        
         # --- Step 1: Calculate Errors ---
-        e_psi = -psi
-        e_lat = self.l_lane - self.l_des - l  # self.l_des - l 
+        # e_psi = -psi
+        e_lat = self.l_lane - self.l_des - l
         
         # --- Step 2: Calculate Steering Angle Components ---
         numerator = -math.cos(e_psi) * e_lat - (self.k_a1 + self.k_a2) * math.sin(e_psi)
         denominator = self.k_a1 - (self.k_a1 + self.k_a2) * math.cos(e_psi) + math.sin(e_psi) * e_lat
 
-        if abs(denominator) < 1e-6:
-            denominator = 1e-6 if denominator >= 0 else -1e-6
-
-        phi_feedback = math.atan(numerator / denominator)
-
-        phi_feedforward = math.atan(self.L / self.R)
-        phi = phi_feedback + phi_feedforward
+        # phi = math.atan(numerator / denominator)
+        phi = math.atan2(numerator, denominator)
         
-        MAX_STEER = math.radians(35.0)
+        MAX_STEER = math.radians(45.0)
         phi = max(min(phi, MAX_STEER), -MAX_STEER)
-        
-        # (Closing the Loop)
-        # l_dot = v * math.sin(psi)
-        # psi_dot = (v / self.L) * math.tan(phi)
-        
-        # Advance the physical simulation states using Forward Euler integration[cite: 1]
-        # self.current_l += l_dot * self.dt
-        # self.current_psi += psi_dot * self.dt
         
         msg = Float64()
         msg.data = phi
         self.steering_pub.publish(msg)
 
         # self.get_logger().info(f"phi: {phi}, l_des: {self.l_des}")
-        
-        # self.get_logger().info(
-        #     f"Lat Error: {e_lat:.3f}m | Yaw Error: {math.degrees(e_psi):.1f}° | "
-        #     f"Steer Output (phi): {math.degrees(phi):.1f}°"
-        # )
 
 def main(args=None):
     rclpy.init(args=args)

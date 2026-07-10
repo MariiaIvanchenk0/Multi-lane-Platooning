@@ -39,10 +39,6 @@ class LongitudinalSimNode(Node):
         self.declare_parameter('alpha_bar_hat', 1.0)    # Adaptive guess for (1 / alpha)
         self.declare_parameter('beta_hat', -0.0001)     # Adaptive guess for aerodynamic drag coefficient
         self.declare_parameter('delta_hat', -0.1)       # Adaptive guess for constant disturbance/friction
-        
-        self.v_des = 0.0
-        self.omega = 0.0          # Accumulated velocity error state
-        self.state = [0.0, 0.0, 0.0, 0.0]
 
         # Get parameters
         self.k_1 = self.get_parameter('k_1').value
@@ -56,11 +52,17 @@ class LongitudinalSimNode(Node):
         self.beta_hat = self.get_parameter('beta_hat').value
         self.delta_hat = self.get_parameter('delta_hat').value
 
-        # Publisher & Timer
+        self.prev_v_des = 0.0
+        self.v_des = 0.0
+        self.omega = 0.0          # Accumulated velocity error state
+        self.state = [0.0, 0.0, 0.0, 0.0]
+        self.dt = 1.0 / self.get_parameter('frequency').value # period 
+
+        # Subscriptions & Publisher & Timer
         self.vdes_sub = self.create_subscription(Float64, 'v_des', self.vdes_callback, 10)
         self.state_sub = self.create_subscription(Float64MultiArray, 'vehicle_state', self.state_callback, 10)
+
         self.torque_pub = self.create_publisher(Float64, 'cntl_torque', 10)
-        self.dt = 1.0 / self.get_parameter('frequency').value # period 
         self.timer = self.create_timer(self.dt, self.control_loop_callback)
         # self.get_logger().info("Longitudinal Adaptive Controller Node Initialized.")
     
@@ -71,15 +73,15 @@ class LongitudinalSimNode(Node):
         self.v_des = msg.data
 
     def control_loop_callback(self):
-        # NOTE: In production, these inputs should be fetched dynamically 
         v = self.state[3]
-        v_des_dot = 0.0   # Target acceleration (m/s^2)
+        # v_des_dot = 0.0   # Target acceleration (m/s^2)
+        v_des_dot = (self.v_des - self.prev_v_des) / self.dt
         
         # --- Step 1: Calculate Velocity Error ---
         e_v = v - self.v_des
         
         # --- Step 2: Calculate Tau (Intermediate Control Action) ---
-        tau = (-self.k_1 * e_v 
+        tau = (- self.k_1 * e_v 
                - self.k_2 * self.omega 
                - self.beta_hat * (v ** 2) 
                - self.delta_hat
@@ -109,18 +111,13 @@ class LongitudinalSimNode(Node):
         MAX_TORQUE = 250.0
         MIN_TORQUE = 5.0
         torque = max(min(torque, MAX_TORQUE), MIN_TORQUE)
+        self.prev_v_des = self.v_des
 
         # self.get_logger().info(f"v_des: {self.v_des}")
-
-        # v_dot = (self.true_alpha * torque) + (self.true_beta * (v **2)) + self.true_delta
-        # self.v += v_dot * self.dt
         
         msg = Float64()
         msg.data = torque
         self.torque_pub.publish(msg)
-        # self.get_logger().info(
-        #     f"e_v: {e_v:.2f} | current_v: {self.state[3]} | Torque: {torque:.2f}"
-        # )
 
 
 def main(args=None):

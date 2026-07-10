@@ -1,6 +1,7 @@
 /**:
   ros__parameters:
     wheelbase: 2.5              # wheelbase (L)
+    frequency: 20.0
 
 model_simulation_node:
   ros__parameters:
@@ -9,8 +10,8 @@ model_simulation_node:
     delta: -0.1                 # a fixed unknown disturbance
 
     base_frame: "robot_bs"      # name for this robot instance
+    # frequency: 100.0            # integration rate [Hz]
 
-    frequency: 100.0            # integration rate [Hz]
     s0: 0.0                     # initial s (longitudinal position)
     l0: 0.0                     # initial l (lateral position)
     psi0: 0.0                   # initial psi (yaw/heading angle)
@@ -22,9 +23,9 @@ longitudinal_controller_node:
     gamma_beta: 0.0001
     gamma_delta: 0.01
 
-    k_1: 5.0
-    k_2: 0.5
-    frequency: 20.0
+    k_1: 7.0
+    k_2: 1.0
+    # frequency: 20.0
 
     alpha_bar_hat: 1.0
     beta_hat: -0.0001
@@ -32,18 +33,16 @@ longitudinal_controller_node:
     
 lateral_controller_node:
   ros__parameters:
-    frequency: 20.0
-    # wheelbase: 2.5
-    R: 20.0
-
     k_a1: 1.5
     k_a2: 3.0
+    l_lane: 0.0
+    # frequency: 20.0
 
 formation_controller_node:
   ros__parameters:
     # id: 1.0
     neighbor_id: [2]    # IDs of topological neighbors
-    frequency: 20.0
+    # frequency: 20.0
     namespace: "robot"
     
     k_s: 0.6
@@ -56,4 +55,4 @@ formation_controller_node:
 road_adaptation_node:
   ros__parameters:
     R: 20.0
-    frequency: 20.0
+    # frequency: 20.0
