@@ -91,7 +91,7 @@ class LateralControllerNode(Node):
         msg.data = phi
         self.steering_pub.publish(msg)
 
-        self.get_logger().info(f"phi: {phi}, l_des: {self.l_des}")
+        # self.get_logger().info(f"phi: {phi}, l_des: {self.l_des}")
         
         # self.get_logger().info(
         #     f"Lat Error: {e_lat:.3f}m | Yaw Error: {math.degrees(e_psi):.1f}° | "

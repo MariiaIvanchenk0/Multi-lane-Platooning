@@ -23,8 +23,8 @@ class FormationControllerNode(Node):
         super().__init__('formation_controller_node')
         
         # Declare Parameters 
-        self.declare_parameter('id')
-        self.declare_parameter('neighbor_ids')
+        self.declare_parameter('id', 1)
+        self.declare_parameter('neighbor_ids', [1])
         self.declare_parameter('frequency', 20.0)
         self.declare_parameter('namespace', 'robot')
         self.declare_parameter('k_s', 0.6)
@@ -46,7 +46,7 @@ class FormationControllerNode(Node):
         self.deg_i = len(self.neighbor_ids)
         self.desired_offsets = {
             1: [0.0, 0.0],
-            2: [25.0, 0.0],
+            2: [50.0, 0.0],
             # 3: [50.0, 0.0],
             # 4: [10.0, -3.4],
             # 5: [45.0, -4.0]

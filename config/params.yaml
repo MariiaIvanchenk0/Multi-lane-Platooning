@@ -1,21 +1,20 @@
+/**:
+  ros__parameters:
+    wheelbase: 2.5              # wheelbase (L)
+
 model_simulation_node:
   ros__parameters:
-    alpha: 0.012                # the unknown input gain
-    beta: -0.01               # the unknown damping coefficient
+    alpha: 0.0012               # the unknown input gain
+    beta: -0.0001               # the unknown damping coefficient
     delta: -0.1                 # a fixed unknown disturbance
-    wheelbase: 2.5              # wheelbase (L)
-    base_frame: "robot_bs"       # name for this robot instance
 
-    R: 20.0
-    frequency: 100.0             # integration rate [Hz]
+    base_frame: "robot_bs"      # name for this robot instance
+
+    frequency: 100.0            # integration rate [Hz]
     s0: 0.0                     # initial s (longitudinal position)
     l0: 0.0                     # initial l (lateral position)
     psi0: 0.0                   # initial psi (yaw/heading angle)
     v0: 0.0                     # initial velocity
-
-    # Dynamic parameters
-    # torque: 100.0               # the input torque
-    # phi: 0.05                   # the input steering angle
 
 longitudinal_controller_node:
   ros__parameters:
@@ -25,8 +24,6 @@ longitudinal_controller_node:
 
     k_1: 5.0
     k_2: 0.5
-
-    # v_des: 25.0
     frequency: 20.0
 
     alpha_bar_hat: 1.0
@@ -36,7 +33,7 @@ longitudinal_controller_node:
 lateral_controller_node:
   ros__parameters:
     frequency: 20.0
-    wheelbase: 2.5
+    # wheelbase: 2.5
     R: 20.0
 
     k_a1: 1.5

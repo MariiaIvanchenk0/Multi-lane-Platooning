@@ -53,7 +53,7 @@ def generate_launch_description():
                 executable='longitudinal_controller_node',
                 name='longitudinal_controller',
                 parameters=[params_config, {
-                    'k_1': 30,
+                    'k_1': 3.0,
                     'k_2': 0.3
                 }]
             ),
