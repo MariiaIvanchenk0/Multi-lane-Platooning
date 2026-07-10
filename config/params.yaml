@@ -1,5 +1,6 @@
 /**:
   ros__parameters:
+    R: 20.0
     wheelbase: 2.5              # wheelbase (L)
     frequency: 20.0
 

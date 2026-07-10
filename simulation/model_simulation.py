@@ -46,6 +46,7 @@ class ModelSimulationNode(Node):
         self.declare_parameter('psi0', 0.0)
         self.declare_parameter('v0', 0.0)
 
+        self.declare_parameter('R', 20.0)
         self.declare_parameter('wheelbase', 2.5)
         self.declare_parameter('base_frame', 'robot_bs')
 
@@ -65,12 +66,12 @@ class ModelSimulationNode(Node):
             self.get_parameter('v0').value
         ]
 
+        self.R = self.get_parameter('R').value
         self.L = self.get_parameter('wheelbase').value
         self.base_frame = self.get_parameter('base_frame').value + f"_{self.id}"
 
         self.T = 0.0
         self.phi = 0.0
-        self.reference_path = self.generate_custom_path()
 
         # Callbacks
         self.torque_sub = self.create_subscription(Float64, 'cntl_torque', self.torque_callback, 10)
@@ -134,19 +135,13 @@ class ModelSimulationNode(Node):
     def phi_callback(self, msg):
         self.phi = msg.data
 
-    def yaw_to_quaternion(self, yaw):
-        return [0.0, 0.0, math.sin(yaw / 2.0), math.cos(yaw / 2.0)]
-
     def frenet_to_cartesian(self, state):
         """Converts internal Frenet vector safely to Cartesian coordinates"""
         s, l, psi, _ = state # Correctly unpacks from the 4-element state array
         
-        # Look up nearest waypoint along generated spatial curve
-        closest_wp = min(self.reference_path, key=lambda wp: abs(wp['s'] - s))
-        
-        x_r = closest_wp['x']
-        y_r = closest_wp['y']
-        theta_r = closest_wp['theta']   
+        theta_r = s / self.R
+        x_r = self.R * math.sin(theta_r)
+        y_r = self.R - self.R * math.cos(theta_r)
 
         # Position Projections
         x = x_r - l * math.sin(theta_r)
@@ -154,24 +149,6 @@ class ModelSimulationNode(Node):
         global_theta = theta_r + psi
         
         return x, y, global_theta
-    
-    def generate_custom_path(self):
-        """Generates an arbitrary reference track array."""
-        path_points = []
-        num_points = 500
-        R = 20.0 
-        
-        for i in range(num_points + 1):
-            theta_r = (2.0 * math.pi / num_points) * i
-            s = R * theta_r
-            
-            path_points.append({
-                'x': R * math.sin(theta_r),
-                'y': R - R * math.cos(theta_r),
-                'theta': theta_r,
-                's': s
-            })
-        return path_points
 
     def publish_lane_centerline(self):
         """Publishes the generalized reference path to RViz and topics."""
@@ -189,34 +166,17 @@ class ModelSimulationNode(Node):
         marker.color.g = 1.0
         marker.color.b = 0.0
         marker.color.a = 0.6
+        num_points = 200
 
-        path_msg = Path()
-        path_msg.header.frame_id = "map"
-        path_msg.header.stamp = now
-
-        for wp in self.reference_path:
+        for i in range(num_points + 1):
+            theta_r = (2.0 *math.pi / num_points) * i
             p = Point()
-            p.x = wp['x']
-            p.y = wp['y']
+            p.x = self.R * math.sin(theta_r)
+            p.y = self.R - self.R * math.cos(theta_r)
             p.z = 0.0
             marker.points.append(p)
-            
-            pose = PoseStamped()
-            pose.header.frame_id = "map"
-            pose.header.stamp = now
-            pose.pose.position.x = wp['x']
-            pose.pose.position.y = wp['y']
-            pose.pose.position.z = 0.0
-            
-            q = self.yaw_to_quaternion(wp['theta'])
-            pose.pose.orientation.x = q[0]
-            pose.pose.orientation.y = q[1]
-            pose.pose.orientation.z = q[2]
-            pose.pose.orientation.w = q[3]
-            path_msg.poses.append(pose)
-            
+
         self.lane_pub.publish(marker)
-        self.path_pub.publish(path_msg)
 
     def publish_to_sim(self, state):
         x, y, theta = self.frenet_to_cartesian(state)
