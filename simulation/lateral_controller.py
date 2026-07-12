@@ -64,7 +64,7 @@ class LateralControllerNode(Node):
         
         # --- Step 1: Calculate Errors ---
         e_psi = -psi
-        e_lat = self.l_lane - self.l_des - l
+        e_lat = self.l_des - l # self.l_lane - 
         
         # --- Step 2: Calculate Steering Angle Components ---
         numerator = -math.cos(e_psi) * e_lat - (self.k_a1 + self.k_a2) * math.sin(e_psi)
@@ -73,8 +73,9 @@ class LateralControllerNode(Node):
         if abs(denominator) < 1e-6:
             denominator = 1e-6 if denominator >= 0 else -1e-6
 
-        phi_feedforward = math.atan2(self.L, self.R)
-        phi = math.atan2(numerator, denominator) + phi_feedforward
+        # phi_feedforward = math.atan2(self.L, self.R)
+        phi = math.atan(numerator / denominator) # + phi_feedforward
+        # phi = math.atan2(numerator, denominator) 
         
         MAX_STEER = math.radians(45.0)
         phi = max(min(phi, MAX_STEER), -MAX_STEER)

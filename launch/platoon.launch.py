@@ -12,7 +12,7 @@ def generate_launch_description():
     namespace = "robot"
     platoon_config = [
         [1,  0.0, 0.0, [2], 0.0], # [2, 4]
-        [2, 5.0, 0.0, [1], 0.0],  #[1, 3, 5]
+        [2, 0.0, 4.0, [1], 4.0],  #[1, 3, 5]
         # [3, 48.0,  0.5, [2, 5]],
         # [4, 10.0, -3.4, [1, 5]],
         # [5, 45.0, -4.0, [2, 3, 4]]
@@ -33,7 +33,6 @@ def generate_launch_description():
                     's0': s0,
                     'l0': l0,
                     'v0': 5.0,
-                    # 'frequency': 20.0
                 }]
             ),
             
@@ -42,8 +41,6 @@ def generate_launch_description():
                 executable='lateral_controller_node',
                 name='lateral_controller',
                 parameters=[params_config, {
-                    'k_a1': 1.0,
-                    'k_a2': 2.0,
                     'l_lane': lane,
                 }]
             ),
@@ -74,7 +71,6 @@ def generate_launch_description():
                 parameters=[params_config, {
                     'id': robot_id,
                     'neighbor_ids': neighbors,
-                    'v_f': 25.0
                 }]
             ),
         ])

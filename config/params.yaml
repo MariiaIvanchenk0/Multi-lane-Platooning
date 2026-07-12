@@ -24,11 +24,10 @@ longitudinal_controller_node:
     gamma_beta: 0.0001
     gamma_delta: 0.01
 
-    k_1: 7.0
-    k_2: 1.0
-    # frequency: 20.0
+    k_1: 25.0
+    k_2: 1.5
 
-    alpha_bar_hat: 1.0
+    alpha_bar_hat: 833.33 # 1.0
     beta_hat: -0.0001
     delta_hat: -0.1
     
@@ -37,23 +36,20 @@ lateral_controller_node:
     k_a1: 1.5
     k_a2: 3.0
     l_lane: 0.0
-    # frequency: 20.0
 
 formation_controller_node:
   ros__parameters:
     # id: 1.0
     neighbor_id: [2]    # IDs of topological neighbors
-    # frequency: 20.0
     namespace: "robot"
     
-    k_s: 0.6
+    k_s: 0.1 # 0.6
     k_l: 0.1
     k_n: 0.06           # Smooth deadzone design constant
 
     v_f: 15.0           # Desired cruise speed (m/s)
     n_bar: 0.4          # Bounded noise threshold (m)
 
-road_adaptation_node:
-  ros__parameters:
-    R: 20.0
-    # frequency: 20.0
+# road_adaptation_node:
+#   ros__parameters:
+#     R: 20.0

@@ -27,7 +27,7 @@ class FormationControllerNode(Node):
         self.declare_parameter('neighbor_ids', [1])
         self.declare_parameter('frequency', 20.0)
         self.declare_parameter('namespace', 'robot')
-        self.declare_parameter('k_s', 0.6)
+        self.declare_parameter('k_s', 0.1)
         self.declare_parameter('k_l', 0.1)
         self.declare_parameter('k_n', 0.06)
         self.declare_parameter('v_f', 15.0)
@@ -46,7 +46,7 @@ class FormationControllerNode(Node):
         self.deg_i = len(self.neighbor_ids)
         self.desired_offsets = {
             1: [0.0, 0.0],
-            2: [50.0, 0.0],
+            2: [0.0, 4.0],
             # 3: [50.0, 0.0],
             # 4: [10.0, -3.4],
             # 5: [45.0, -4.0]
@@ -154,15 +154,15 @@ class FormationControllerNode(Node):
         total_error_s = 0.0
         total_error_l = 0.0
 
-        # ego_offset_s, ego_offset_l = self.desired_offsets.get(self.id, [0.0, 0.0])
+        ego_offset_s, ego_offset_l = self.desired_offsets.get(self.id, [0.0, 0.0])
         
         for nid in self.neighbor_ids:
             # Fetch target formation offset from configuration matrix
-            D_ji_s, D_ji_l = self.desired_offsets.get(nid, [0.0, 0.0])
+            # D_ji_s, D_ji_l = self.desired_offsets.get(nid, [0.0, 0.0])
 
-            # neighbor_offset_s, neighbor_offset_l = self.desired_offsets.get(nid, [0.0, 0.0])
-            # D_ji_s = neighbor_offset_s - ego_offset_s
-            # D_ji_l = neighbor_offset_l - ego_offset_l
+            neighbor_offset_s, neighbor_offset_l = self.desired_offsets.get(nid, [0.0, 0.0])
+            D_ji_s = neighbor_offset_s - ego_offset_s
+            D_ji_l = neighbor_offset_l - ego_offset_l
 
             total_error_s += w_s[nid] * (d_ji_s_dict[nid] - D_ji_s)  #(D_ji_s - d_ji_s_dict[nid]) #
             total_error_l += w_l[nid] * (d_ji_l_dict[nid] - D_ji_l)  #(D_ji_l - d_ji_l_dict[nid]) # 

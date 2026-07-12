@@ -48,11 +48,13 @@ class RoadAdaptationNode(Node):
         self.state = msg.data
 
     def control_loop_callback(self):
-        kappa_r = 1.0 / self.R
         current_l = self.state[1]
+        current_v = self.state[3]
         
-        v_i_des = self.kinematic[0] * (1.0 + kappa_r * current_l)
+        v_i_des = self.kinematic[0] # * ((self.R + current_l) / self.R)
         self.l_i_des += self.kinematic[1] * self.dt
+
+        self.get_logger().info(f"l: {current_l}, u_il: {self.kinematic[1]}, l_i_des: {self.l_i_des}")
         
         v_msg = Float64()
         l_msg = Float64()

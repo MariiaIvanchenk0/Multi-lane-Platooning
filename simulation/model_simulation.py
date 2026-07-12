@@ -126,8 +126,8 @@ class ModelSimulationNode(Node):
         
         self.publish_to_sim(self.state)
         
-        # if self.id == 1:
-        self.publish_lane_centerline()
+        if self.id == 1:
+            self.publish_lane_centerline()
 
     def torque_callback(self, msg):
         self.T = msg.data
@@ -144,8 +144,8 @@ class ModelSimulationNode(Node):
         y_r = self.R - self.R * math.cos(theta_r)
 
         # Position Projections
-        x = x_r - l * math.sin(theta_r)
-        y = y_r + l * math.cos(theta_r)
+        x = x_r + l * math.sin(theta_r)
+        y = y_r - l * math.cos(theta_r)
         global_theta = theta_r + psi
         
         return x, y, global_theta

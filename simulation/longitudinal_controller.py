@@ -28,15 +28,15 @@ class LongitudinalSimNode(Node):
         super().__init__('longitudinal_controller_node')
         
         # Declare parameters
-        self.declare_parameter('k_1', 5.0)
-        self.declare_parameter('k_2', 0.5)
+        self.declare_parameter('k_1', 25.0)
+        self.declare_parameter('k_2', 1.5)
         self.declare_parameter('frequency', 20.0)
 
         self.declare_parameter('gamma_alpha', 0.001)
         self.declare_parameter('gamma_beta', 0.0001)
         self.declare_parameter('gamma_delta', 0.01)
         
-        self.declare_parameter('alpha_bar_hat', 1.0)    # Adaptive guess for (1 / alpha)
+        self.declare_parameter('alpha_bar_hat', 833.33)    # Adaptive guess for (1 / alpha)
         self.declare_parameter('beta_hat', -0.0001)     # Adaptive guess for aerodynamic drag coefficient
         self.declare_parameter('delta_hat', -0.1)       # Adaptive guess for constant disturbance/friction
 
@@ -74,7 +74,6 @@ class LongitudinalSimNode(Node):
 
     def control_loop_callback(self):
         v = self.state[3]
-        # v_des_dot = 0.0   # Target acceleration (m/s^2)
         v_des_dot = (self.v_des - self.prev_v_des) / self.dt
         
         # --- Step 1: Calculate Velocity Error ---
@@ -102,18 +101,20 @@ class LongitudinalSimNode(Node):
         if self.alpha_bar_hat < 0.0001:
             self.alpha_bar_hat = 0.0001
 
+        self.omega = max(min(self.omega, 20.0), -20.0)
+
         self.beta_hat = max(min(self.beta_hat, 0.0), -0.01)
         self.delta_hat = max(min(self.delta_hat, 0.0), -5.0)               
 
         # --- Step 5: Calculate Final Torque ---
         torque = self.alpha_bar_hat * tau
 
-        MAX_TORQUE = 250.0
-        MIN_TORQUE = 5.0
+        MAX_TORQUE = 2500.0
+        MIN_TORQUE = -1500.0
         torque = max(min(torque, MAX_TORQUE), MIN_TORQUE)
         self.prev_v_des = self.v_des
 
-        # self.get_logger().info(f"v_des: {self.v_des}")
+        # self.get_logger().info(f"v: {v}, v_des: {self.v_des}")
         
         msg = Float64()
         msg.data = torque
