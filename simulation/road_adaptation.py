@@ -14,6 +14,8 @@ import math
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Float64, Float64MultiArray
+from rclpy.qos import QoSProfile, HistoryPolicy
+
 
 class RoadAdaptationNode(Node):
     def __init__(self):
@@ -32,11 +34,13 @@ class RoadAdaptationNode(Node):
         self.state = [0.0, 0.0, 0.0, 0.0]
         self.kinematic = [0.0, 0.0]
 
+        qos_profile = QoSProfile(depth=1, history=HistoryPolicy.KEEP_LAST)
+
         # Subscriber, Publishers & Timer
-        self.kinematic_sub = self.create_subscription(Float64MultiArray, 'kinematic_input', self.kinematic_callback, 10)
-        self.state_sub = self.create_subscription(Float64MultiArray, 'vehicle_state', self.state_callback, 10)
-        self.v_des_pub = self.create_publisher(Float64, 'v_des', 10)
-        self.l_des_pub = self.create_publisher(Float64, 'l_des', 10)
+        self.kinematic_sub = self.create_subscription(Float64MultiArray, 'kinematic_input', self.kinematic_callback, qos_profile)
+        self.state_sub = self.create_subscription(Float64MultiArray, 'vehicle_state', self.state_callback, qos_profile)
+        self.v_des_pub = self.create_publisher(Float64, 'v_des', qos_profile)
+        self.l_des_pub = self.create_publisher(Float64, 'l_des', qos_profile)
 
         self.timer = self.create_timer(self.dt, self.control_loop_callback)
         # self.get_logger().info(f"Road Adaptation Layer Initialized.")
@@ -54,7 +58,7 @@ class RoadAdaptationNode(Node):
         v_i_des = self.kinematic[0] # * ((self.R + current_l) / self.R)
         self.l_i_des += self.kinematic[1] * self.dt
 
-        self.get_logger().info(f"l: {current_l}, u_il: {self.kinematic[1]}, l_i_des: {self.l_i_des}")
+        # self.get_logger().info(f"l: {current_l}, u_il: {self.kinematic[1]}, l_i_des: {self.l_i_des}")
         
         v_msg = Float64()
         l_msg = Float64()

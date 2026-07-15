@@ -17,6 +17,7 @@ import math
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Float64, Float64MultiArray
+from rclpy.qos import QoSProfile, HistoryPolicy
 
 
 class LateralControllerNode(Node):
@@ -41,13 +42,15 @@ class LateralControllerNode(Node):
 
         self.l_des = 0.0
         self.state = [0.0, 0.0, 0.0, 0.0]
+
+        qos_profile = QoSProfile(depth=1, history=HistoryPolicy.KEEP_LAST)
         
         # Sybscriptions & Publishers & Timer
-        self.state_sub = self.create_subscription(Float64MultiArray, 'vehicle_state', self.state_callback, 10)
-        self.ldes_sub = self.create_subscription(Float64, 'l_des', self.ldes_callback, 10)
+        self.state_sub = self.create_subscription(Float64MultiArray, 'vehicle_state', self.state_callback, qos_profile)
+        self.kinematic_sub = self.create_subscription(Float64MultiArray, 'kinematic_input', self.kinematic_callback, qos_profile)
 
-        self.state_pub = self.create_publisher(Float64MultiArray, 'updated_state', 10)
-        self.steering_pub = self.create_publisher(Float64, 'cntl_phi', 10)
+        self.state_pub = self.create_publisher(Float64MultiArray, 'updated_state', qos_profile)
+        self.steering_pub = self.create_publisher(Float64, 'cntl_phi', qos_profile)
 
         self.timer = self.create_timer(self.dt, self.control_loop_callback)
         # self.get_logger().info("Lateral Geometric Controller Node Initialized.")
@@ -55,8 +58,8 @@ class LateralControllerNode(Node):
     def state_callback(self, msg):
         self.state = msg.data
 
-    def ldes_callback(self, msg):
-        self.l_des = msg.data
+    def kinematic_callback(self, msg):
+        self.l_des = msg.data[1]
 
     def control_loop_callback(self):
         l = self.state[1]

@@ -26,7 +26,9 @@ from nav_msgs.msg import Path
 from std_msgs.msg import Float64, Float64MultiArray
 from tf2_ros import TransformBroadcaster
 from visualization_msgs.msg import Marker
-from geometry_msgs.msg import TransformStamped, Quaternion, Point, PoseStamped
+from geometry_msgs.msg import TransformStamped, Quaternion, Point
+from rclpy.qos import QoSProfile, HistoryPolicy
+
 
 class ModelSimulationNode(Node):
     def __init__(self):
@@ -34,7 +36,7 @@ class ModelSimulationNode(Node):
 
         # Declare parameters
         self.declare_parameter('id', 1)
-        self.declare_parameter('frequency', 100.0)
+        self.declare_parameter('frequency', 20.0)
 
         # True plant dynamics values from paper
         self.declare_parameter('alpha', 0.0012)
@@ -73,14 +75,17 @@ class ModelSimulationNode(Node):
         self.T = 0.0
         self.phi = 0.0
 
-        # Callbacks
-        self.torque_sub = self.create_subscription(Float64, 'cntl_torque', self.torque_callback, 10)
-        self.phi_sub = self.create_subscription(Float64, 'cntl_phi', self.phi_callback, 10)
+        qos_profile = QoSProfile(depth=1, history=HistoryPolicy.KEEP_LAST)
 
-        self.lane_pub = self.create_publisher(Marker, 'lane_marker', 10)
-        self.path_pub = self.create_publisher(Path, 'global_reference_path', 10)
-        self.marker_pub = self.create_publisher(Marker, 'model_marker', 10)
-        self.state_pub = self.create_publisher(Float64MultiArray, 'vehicle_state', 10)
+        # Callbacks
+        # self.torque_sub = self.create_subscription(Float64, 'cntl_torque', self.torque_callback, qos_profile)
+        # self.phi_sub = self.create_subscription(Float64, 'cntl_phi', self.phi_callback, qos_profile)
+        self.control_sub = self.create_subscription(Float64MultiArray, 'cntl_vector', self.cntl_callback, qos_profile)
+
+        if self.id == 1:
+            self.lane_pub = self.create_publisher(Marker, 'lane_marker', qos_profile)
+        self.marker_pub = self.create_publisher(Marker, 'model_marker', qos_profile)
+        self.state_pub = self.create_publisher(Float64MultiArray, 'vehicle_state', qos_profile)
 
         self.tf_broadcaster = TransformBroadcaster(self)
         self.timer = self.create_timer(self.dt, self.step)
@@ -129,11 +134,9 @@ class ModelSimulationNode(Node):
         if self.id == 1:
             self.publish_lane_centerline()
 
-    def torque_callback(self, msg):
-        self.T = msg.data
-
-    def phi_callback(self, msg):
-        self.phi = msg.data
+    def cntl_callback(self, msg):
+        self.T = msg.data[0]
+        self.phi = msg.data[1]
 
     def frenet_to_cartesian(self, state):
         """Converts internal Frenet vector safely to Cartesian coordinates"""

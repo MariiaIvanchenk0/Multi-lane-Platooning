@@ -33,9 +33,10 @@ setup(
     entry_points={
         'console_scripts': [
             'model_simulation_node = simulation.model_simulation:main',
-            'longitudinal_controller_node = simulation.longitudinal_controller:main',
-            'lateral_controller_node = simulation.lateral_controller:main',
-            'road_adaptation_node = simulation.road_adaptation:main',
+            # 'longitudinal_controller_node = simulation.longitudinal_controller:main',
+            # 'lateral_controller_node = simulation.lateral_controller:main',
+            'controller_node = simulation.controller:main',
+            # 'road_adaptation_node = simulation.road_adaptation:main',
             'formation_controller_node = simulation.formation_layer:main',
         ],
     },

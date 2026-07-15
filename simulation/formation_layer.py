@@ -17,6 +17,7 @@ import math
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Float64MultiArray
+from rclpy.qos import QoSProfile, HistoryPolicy
 
 class FormationControllerNode(Node):
     def __init__(self):
@@ -32,6 +33,7 @@ class FormationControllerNode(Node):
         self.declare_parameter('k_n', 0.06)
         self.declare_parameter('v_f', 15.0)
         self.declare_parameter('n_bar', 0.4)
+        self.declare_parameter('l0', 0.0)
         
         # Get Parameters
         self.id = self.get_parameter('id').value
@@ -43,21 +45,24 @@ class FormationControllerNode(Node):
         self.k_n = self.get_parameter('k_n').value
         self.namespace = self.get_parameter('namespace').value
         
+        self.l_i_des = self.get_parameter('l0').value
         self.deg_i = len(self.neighbor_ids)
         self.desired_offsets = {
             1: [0.0, 0.0],
-            2: [0.0, 4.0],
-            # 3: [50.0, 0.0],
-            # 4: [10.0, -3.4],
-            # 5: [45.0, -4.0]
+            2: [20.0, 0.0],
+            3: [40.0, 0.0],
+            4: [10.0, -3.4],
+            # 5: [30.0, -4.0]
         }
 
         self.dt = 1.0 / self.get_parameter('frequency').value # period
         self.state = [0.0, 0.0, 0.0, 0.0]  # [s, l, psi, v]
         self.neighbor_states = {nid: [0.0, 0.0, 0.0, 0.0] for nid in self.neighbor_ids}
+
+        qos_profile = QoSProfile(depth=1, history=HistoryPolicy.KEEP_LAST)
         
         # Subscriptions
-        self.state_sub = self.create_subscription(Float64MultiArray, 'vehicle_state', self.state_callback, 10) 
+        self.state_sub = self.create_subscription(Float64MultiArray, 'vehicle_state', self.state_callback, qos_profile) 
         self.neighbor_subs = []
         for nid in self.neighbor_ids:
             topic_name = f'/{self.namespace}_{nid}/vehicle_state'
@@ -65,12 +70,12 @@ class FormationControllerNode(Node):
                 Float64MultiArray, 
                 topic_name, 
                 lambda msg, nid=nid: self.neighbor_state_callback(msg, nid), 
-                10
+                qos_profile
             )
             self.neighbor_subs.append(sub)
         
         # Publisher & Timer
-        self.kinematic_pub = self.create_publisher(Float64MultiArray, 'kinematic_input', 10)
+        self.kinematic_pub = self.create_publisher(Float64MultiArray, 'kinematic_input', qos_profile)
         self.timer = self.create_timer(self.dt, self.control_loop_callback)
         # self.get_logger().info(f"Formation Controller Layer Initialized for Robot {self.id} (deg: {self.deg_i}).")
 
@@ -178,10 +183,14 @@ class FormationControllerNode(Node):
         U_MAX = 40.0
         u_is = max(min(u_is, U_MAX), U_MIN)
         # u_il = max(min(u_il, 5.0), -5.0)
+
+        # --- Step 4.1: Road Adaptation ---
+        v_i_des = u_is
+        self.l_i_des += u_il * self.dt
         
         # --- Step 5: Publish Control Vector ---
         input_msg = Float64MultiArray()
-        input_msg.data = [u_is, u_il]
+        input_msg.data = [v_i_des, self.l_i_des]
         self.kinematic_pub.publish(input_msg)
 
 
