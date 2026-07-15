@@ -49,11 +49,16 @@ class FormationControllerNode(Node):
         self.deg_i = len(self.neighbor_ids)
         self.desired_offsets = {
             1: [0.0, 0.0],
-            2: [20.0, 0.0],
-            3: [40.0, 0.0],
-            4: [10.0, -3.4],
-            # 5: [30.0, -4.0]
+            2: [10.0, 4.0],
+            3: [-10.0, 4.0],
         }
+        # self.desired_offsets = {
+        #     1: [0.0, 0.0],
+        #     2: [20.0, 0.0],
+        #     3: [40.0, 0.0],
+        #     4: [10.0, -3.4],
+        #     5: [30.0, -4.0]
+        # }
 
         self.dt = 1.0 / self.get_parameter('frequency').value # period
         self.state = [0.0, 0.0, 0.0, 0.0]  # [s, l, psi, v]

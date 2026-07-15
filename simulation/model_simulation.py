@@ -51,6 +51,7 @@ class ModelSimulationNode(Node):
         self.declare_parameter('R', 20.0)
         self.declare_parameter('wheelbase', 2.5)
         self.declare_parameter('base_frame', 'robot_bs')
+        self.declare_parameter('viz_lanes', [0.0])
 
         # Get parameters
         self.id = self.get_parameter('id').value
@@ -71,6 +72,7 @@ class ModelSimulationNode(Node):
         self.R = self.get_parameter('R').value
         self.L = self.get_parameter('wheelbase').value
         self.base_frame = self.get_parameter('base_frame').value + f"_{self.id}"
+        self.viz_lanes = self.get_parameter('viz_lanes').value
 
         self.T = 0.0
         self.phi = 0.0
@@ -154,32 +156,38 @@ class ModelSimulationNode(Node):
         return x, y, global_theta
 
     def publish_lane_centerline(self):
-        """Publishes the generalized reference path to RViz and topics."""
+        """Publishes all configured visualization lanes to RViz dynamically."""
         now = self.get_clock().now().to_msg()
-        
-        marker = Marker()
-        marker.header.frame_id = "map"
-        marker.header.stamp = now
-        marker.ns = "environment"
-        marker.id = 1
-        marker.type = Marker.LINE_STRIP
-        marker.action = Marker.ADD
-        marker.scale.x = 0.3 
-        marker.color.r = 0.0
-        marker.color.g = 1.0
-        marker.color.b = 0.0
-        marker.color.a = 0.6
         num_points = 200
+        
+        # Loop through whatever lanes are requested in 'viz_lanes'
+        for idx, lane_offset in enumerate(self.viz_lanes):
+            marker = Marker()
+            marker.header.frame_id = "map"
+            marker.header.stamp = now
+            marker.ns = "environment"
+            marker.id = idx + 1  # Dynamic ID ensures they don't overwrite each other
+            marker.type = Marker.LINE_STRIP
+            marker.action = Marker.ADD
+            
+            # Style the main centerline (0.0) differently than adjacent lanes
+            if math.isclose(lane_offset, 0.0, abs_tol=1e-3):
+                marker.scale.x = 0.3
+                marker.color.r, marker.color.g, marker.color.b, marker.color.a = 0.0, 1.0, 0.0, 0.6  # Green
+            else:
+                marker.scale.x = 0.15
+                marker.color.r, marker.color.g, marker.color.b, marker.color.a = 0.8, 0.8, 0.8, 0.5  # Semitransparent Gray
 
-        for i in range(num_points + 1):
-            theta_r = (2.0 *math.pi / num_points) * i
-            p = Point()
-            p.x = self.R * math.sin(theta_r)
-            p.y = self.R - self.R * math.cos(theta_r)
-            p.z = 0.0
-            marker.points.append(p)
+            # Calculate circle coordinates with the given lane offset
+            for i in range(num_points + 1):
+                theta_r = (2.0 * math.pi / num_points) * i
+                p = Point()
+                p.x = (self.R + lane_offset) * math.sin(theta_r)
+                p.y = self.R - (self.R + lane_offset) * math.cos(theta_r)
+                p.z = 0.0
+                marker.points.append(p)
 
-        self.lane_pub.publish(marker)
+            self.lane_pub.publish(marker)
 
     def publish_to_sim(self, state):
         x, y, theta = self.frenet_to_cartesian(state)

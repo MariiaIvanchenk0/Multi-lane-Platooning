@@ -11,12 +11,20 @@ def generate_launch_description():
     # [robot_id, initial_s, initial_l, initial_v, [neighbor_ids], assigned_lane]
     namespace = "robot"
     platoon_config = [
-        [1,  0.0, -0.3, 30.0, [2, 4], 0.0], # [2, 4]
-        [2, 22.0, 0.0, 25.0, [1, 3, 5], 0.0], # [1, 3, 5]
-        [3, 48.0,  0.5, 26.0, [2, 5], 0.0], # [2, 5]
-        [4, 10.0, -3.4, 31.0, [1, 5], 4.0], # [1, 5]
-        # [5, 45.0, -4.0, 27.0, [2, 3, 4], 4.0]
+        [1,   0.0, 0.0, 15.0, [2, 3], 0.0],
+        [2,  10.0, 4.0, 15.0, [1, 3], 4.0],
+        [3, -10.0, 4.0, 15.0, [1, 2], 4.0],
     ]
+    # platoon_config = [
+    #     [1,  0.0, -0.3, 30.0, [2, 4], 0.0], # [2, 4]
+    #     [2, 22.0, 0.0, 25.0, [1, 3, 5], 0.0], # [1, 3, 5]
+    #     [3, 48.0,  0.5, 26.0, [2, 5], 0.0], # [2, 5]
+    #     [4, 10.0, -3.4, 31.0, [1, 5], 4.0], # [1, 5]
+    #     [5, 45.0, -4.0, 27.0, [2, 3, 4], 4.0]
+    # ]
+
+    assigned_lanes = [float(config[5]) for config in platoon_config]
+    unique_lanes = list(set(assigned_lanes + [0.0]))
 
     launch_nodes = []
     for robot_id, s0, l0, v0, neighbors, lane in platoon_config:
@@ -33,6 +41,7 @@ def generate_launch_description():
                     's0': s0,
                     'l0': l0,
                     'v0': v0,
+                    'viz_lanes': unique_lanes,
                 }]
             ),
 
