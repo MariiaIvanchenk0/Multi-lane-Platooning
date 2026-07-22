@@ -1,0 +1,71 @@
+/**:
+  ros__parameters:
+    R: 20.0
+    wheelbase: 2.5              # wheelbase (L)
+    frequency: 20.0
+
+model_simulation_node:
+  ros__parameters:
+    alpha: 0.0012               # the unknown input gain
+    beta: -0.0001               # the unknown damping coefficient
+    delta: -0.1                 # a fixed unknown disturbance
+
+    base_frame: "robot_bs"      # name for this robot instance
+
+    s0: 0.0                     # initial s (longitudinal position)
+    l0: 0.0                     # initial l (lateral position)
+    psi0: 0.0                   # initial psi (yaw/heading angle)
+    v0: 0.0                     # initial velocity
+
+controller_node:
+  ros__parameters:
+    gamma_alpha: 0.001
+    gamma_beta: 0.0001
+    gamma_delta: 0.01
+
+    k_1: 25.0
+    k_2: 1.5
+
+    alpha_bar_hat: 833.33 # 1.0
+    beta_hat: -0.0001
+    delta_hat: -0.1
+    
+    k_a1: 1.5
+    k_a2: 3.0
+    l_lane: 0.0
+
+# longitudinal_controller_node:
+#   ros__parameters:
+#     gamma_alpha: 0.001
+#     gamma_beta: 0.0001
+#     gamma_delta: 0.01
+
+#     k_1: 25.0
+#     k_2: 1.5
+
+#     alpha_bar_hat: 833.33 # 1.0
+#     beta_hat: -0.0001
+#     delta_hat: -0.1
+    
+# lateral_controller_node:
+#   ros__parameters:
+#     k_a1: 1.5
+#     k_a2: 3.0
+#     l_lane: 0.0
+
+formation_controller_node:
+  ros__parameters:
+    # id: 1.0
+    neighbor_id: [2]    # IDs of topological neighbors
+    namespace: "robot"
+    
+    k_s: 0.1 # 0.6
+    k_l: 0.1
+    k_n: 0.06           # Smooth deadzone design constant
+
+    v_f: 15.0           # Desired cruise speed (m/s)
+    n_bar: 0.4          # Bounded noise threshold (m)
+
+# road_adaptation_node:
+#   ros__parameters:
+#     R: 20.0
