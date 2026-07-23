@@ -1,13 +1,19 @@
 import os
 from launch import LaunchDescription
-from launch_ros.actions import Node, PushRosNamespace
+from launch_ros.actions import Node, PushRosNamespace, SetRemap
 from ament_index_python import get_package_share_directory
 from launch.substitutions import LaunchConfiguration
 from launch.conditions import IfCondition
-from launch.actions import DeclareLaunchArgument, GroupAction, ExecuteProcess
+from launch_ros.substitutions import FindPackageShare
+from launch.actions import DeclareLaunchArgument, GroupAction, ExecuteProcess, IncludeLaunchDescription
+from launch.launch_description_sources import AnyLaunchDescriptionSource
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
+
 
 params_config = os.path.join(get_package_share_directory('multilane_formation'), 'config', 'params.yaml')
-rviz_config = os.path.join(get_package_share_directory('multilane_formation'), 'config', 'config_sim.rviz')
+# rviz_config = os.path.join(get_package_share_directory('multilane_formation'), 'config', 'config_sim.rviz')
+rviz_config = os.path.join(get_package_share_directory('multilane_formation'), 'config', 'config2.rviz')
+
 
 def generate_launch_description():
     use_rviz_arg = DeclareLaunchArgument(
@@ -19,21 +25,11 @@ def generate_launch_description():
     use_rviz = LaunchConfiguration('use_rviz')
 
     # [robot_id, initial_s, initial_l, initial_v, [neighbor_ids], assigned_lane]
-    # Must match the agent names in omnisim/polytope_safety_net's agents.yaml
-    # (e.g. agent_1, agent_2, ...) so pose/cmd_vel topics actually connect.
-    namespace = "vrpn_mocap/yahboom"
+    namespace = "robot"
     platoon_config = [
-        [1,   0.0, 0.0, 0.5, [2], 0.0],
-        [2,  1.2, 0.0, 0.5, [1], 0.0],
-        # [3, -10.0, 2.0, 15.0, [1, 2], 2.0],
+        [1, 0.0, 0.0, 0.5, [2], 0.0],
+        [2, 1.2, 0.0, 0.5, [1], 0.0],
     ]
-    # platoon_config = [
-    #     [1,  0.0, -0.3, 30.0, [2, 4], 0.0], # [2, 4]
-    #     [2, 22.0, 0.0, 25.0, [1, 3, 5], 0.0], # [1, 3, 5]
-    #     [3, 48.0,  0.5, 26.0, [2, 5], 0.0], # [2, 5]
-    #     [4, 10.0, -3.4, 31.0, [1, 5], 4.0], # [1, 5]
-    #     [5, 45.0, -4.0, 27.0, [2, 3, 4], 4.0]
-    # ]
 
     assigned_lanes = [float(config[5]) for config in platoon_config]
     unique_lanes = list(set(assigned_lanes + [0.0]))
@@ -47,18 +43,6 @@ def generate_launch_description():
         
         robot_group = GroupAction([
             PushRosNamespace(namespace_string),
-            
-            # Node(
-            #     package='multilane_formation',
-            #     executable='model_simulation_node',
-            #     parameters=[params_config, {
-            #         'id': robot_id,
-            #         's0': s0,
-            #         'l0': l0,
-            #         'v0': v0,
-            #         'viz_lanes': unique_lanes,
-            #     }]
-            # ),
 
             Node(
                 package='multilane_formation',
@@ -90,6 +74,36 @@ def generate_launch_description():
         ])
         
         launch_nodes.append(robot_group)
+
+    # ros2 launch vrpn_mocap client.launch.yaml server:=129.97.71.49 port:=3883
+    remaps = [SetRemap(src=f'/vrpn_mocap/yahboom_{config[0]}/pose', dst=f'/robot_{config[0]}/pose') for config in platoon_config]
+    vrpn_mocap = GroupAction ([
+        *remaps,
+        IncludeLaunchDescription(
+        AnyLaunchDescriptionSource(
+            PathJoinSubstitution([
+                FindPackageShare('vrpn_mocap'),
+                'launch',
+                'client.launch.yaml',
+            ])
+        ),
+        launch_arguments={'server':'129.97.71.49', 'port' : '3883'}.items(),
+    )])
+    launch_nodes.append(vrpn_mocap)
+    
+    #  ros2 launch polytope_safety_net polytope_safety.launch.py boundary_file:=src/polytope_safety_net/config/safety_net_config.yaml  agents_file:=src/polytope_safety_net/config/yahbooms.yaml 
+    polytope_safety_net = IncludeLaunchDescription(
+        AnyLaunchDescriptionSource(
+            PathJoinSubstitution([
+                FindPackageShare('polytope_safety_net'),
+                'launch',
+                'polytope_safety.launch.py',
+            ])
+        ),
+        launch_arguments={'boundary_file':'src/polytope_safety_net/config/safety_net_config.yaml', 
+                            'agents_file' :'src/polytope_safety_net/config/yahbooms.yaml'}.items() 
+    )
+    launch_nodes.append(polytope_safety_net)
 
     rviz = ExecuteProcess(
         cmd = [

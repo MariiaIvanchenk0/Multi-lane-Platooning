@@ -216,7 +216,8 @@ def generate_launch_description():
             default_value=PathJoinSubstitution([
                 FindPackageShare(safety_pkg_name),
                 'config',
-                'robohub.yaml',
+                'safety_net_config.yaml'
+                #'robohub.yaml',
             ]),
             description='Path to the polytope safety boundary YAML file.',
         ),

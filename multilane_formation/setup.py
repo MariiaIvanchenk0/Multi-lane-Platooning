@@ -15,6 +15,7 @@ setup(
         (os.path.join('share', package_name), ['package.xml']),
 
         (os.path.join('share', package_name, 'launch'), glob(os.path.join('launch', 'platoon.launch*.[pxy][yma]*'))),
+        (os.path.join('share', package_name, 'launch'), glob(os.path.join('launch', 'multilane.launch*.[pxy][yma]*'))),
 
         (os.path.join('share', package_name, 'config'), 
          glob('config/*.yaml')) # + 

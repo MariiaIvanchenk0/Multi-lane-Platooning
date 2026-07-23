@@ -36,7 +36,7 @@ import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Twist, PoseStamped
 from std_msgs.msg import Float64MultiArray
-from rclpy.qos import QoSProfile, HistoryPolicy
+from rclpy.qos import QoSProfile, HistoryPolicy, qos_profile_sensor_data
 
 class ControllerNode(Node):
     def __init__(self):
@@ -108,12 +108,12 @@ class ControllerNode(Node):
         qos_profile = QoSProfile(depth=1, history=HistoryPolicy.KEEP_LAST)
 
         # Subscriptions & Publisher & Timer
-        self.kinematic_sub = self.create_subscription(Float64MultiArray, 'kinematic_input', self.kinematic_callback, 10)
-        # self.state_sub = self.create_subscription(Float64MultiArray, 'vehicle_state', self.state_callback, 10)
-        self.pose_sub = self.create_subscription(PoseStamped, 'pose', self.pose_callback, 10)
+        self.kinematic_sub = self.create_subscription(Float64MultiArray, 'kinematic_input', self.kinematic_callback, qos_profile_sensor_data)
+        # self.state_sub = self.create_subscription(Float64MultiArray, 'vehicle_state', self.state_callback, qos_profile_sensor_data)
+        self.pose_sub = self.create_subscription(PoseStamped, 'pose', self.pose_callback, qos_profile_sensor_data)
 
-        # self.control_pub = self.create_publisher(Float64MultiArray, 'cntl_vector', 10)
-        self.raw_cmd_pub = self.create_publisher(Twist, 'raw_cmd_vel', 10)
+        # self.control_pub = self.create_publisher(Float64MultiArray, 'cntl_vector', qos_profile_sensor_data)
+        self.raw_cmd_pub = self.create_publisher(Twist, 'raw_cmd_vel', qos_profile_sensor_data)
 
         self.timer = self.create_timer(self.dt, self.control_loop_callback)
 

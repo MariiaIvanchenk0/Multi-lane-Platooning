@@ -5,14 +5,14 @@
 # where s0 = arc length along the circle, l0 = lateral offset (0 = on the path).
 agents:
   - vrpn_name: dji_robot_4
-    name: agent_1
+    name: robot_1
     serial_number: 3JKDH6C001S454
     initial_pose: {x: 1.0000, y: 0.0000, yaw: 1.5708}   # s0=0.0, l0=0.0
 
   - vrpn_name: dji_robot_5
-    name: agent_2
+    name: robot_2
     serial_number: 3JKDH6U00133TP
-    initial_pose: {x: 0.9553, y: 0.2955, yaw: 1.8708}   # s0=0.3, l0=0.0
+    initial_pose: {x: 0.9553, y: 0.955, yaw: 1.8708}   # s0=0.3, l0=0.0
 
   # Re-enable together with robot 3 in platoon.launch.py + desired_offsets.
   # - vrpn_name: dji_robot_6

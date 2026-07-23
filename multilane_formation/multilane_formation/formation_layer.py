@@ -20,7 +20,7 @@ from rclpy.node import Node
 from tf2_ros import TransformBroadcaster
 from visualization_msgs.msg import Marker
 from std_msgs.msg import Float64MultiArray
-from rclpy.qos import QoSProfile, HistoryPolicy
+from rclpy.qos import QoSProfile, HistoryPolicy, qos_profile_sensor_data
 from geometry_msgs.msg import TransformStamped, Quaternion, Point, PoseStamped
 
 
@@ -32,7 +32,7 @@ class FormationControllerNode(Node):
         self.declare_parameter('id', 1)
         self.declare_parameter('neighbor_ids', [1])
         self.declare_parameter('frequency', 20.0)
-        self.declare_parameter('namespace', 'agent')  # must match omnisim/safety-net agent names
+        self.declare_parameter('namespace', 'robot')  # must match omnisim/safety-net agent names
         self.declare_parameter('k_s', 0.1)
         self.declare_parameter('k_l', 0.1)
         self.declare_parameter('k_n', 0.06)
@@ -91,7 +91,7 @@ class FormationControllerNode(Node):
         qos_profile = QoSProfile(depth=1, history=HistoryPolicy.KEEP_LAST)
         
         # Subscriptions
-        self.state_sub = self.create_subscription(PoseStamped, 'pose', self.pose_callback, 10)
+        self.state_sub = self.create_subscription(PoseStamped, 'pose', self.pose_callback, qos_profile_sensor_data)
         self.neighbor_subs = []
         neighbor_topics = []
         for nid in self.neighbor_ids:
@@ -101,7 +101,7 @@ class FormationControllerNode(Node):
                 PoseStamped,
                 topic_name,
                 lambda msg, nid=nid: self.neighbor_pose_callback(msg, nid),
-                10
+                qos_profile_sensor_data
             )
             self.neighbor_subs.append(sub)
 
