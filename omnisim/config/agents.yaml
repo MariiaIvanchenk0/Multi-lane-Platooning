@@ -1,0 +1,31 @@
+# Initial poses placed ON the R=1.0 m reference circle (centred at origin) with
+# tangent headings, so each robot starts with ~zero path/heading error and the
+# controller does not saturate steering during a violent startup transient.
+#   x = (R+l0)*cos(s0/R),  y = (R+l0)*sin(s0/R),  yaw = s0/R + pi/2
+# where s0 = arc length along the circle, l0 = lateral offset (0 = on the path).
+agents:
+  - vrpn_name: dji_robot_4
+    name: agent_1
+    serial_number: 3JKDH6C001S454
+    initial_pose: {x: 1.0000, y: 0.0000, yaw: 1.5708}   # s0=0.0, l0=0.0
+
+  - vrpn_name: dji_robot_5
+    name: agent_2
+    serial_number: 3JKDH6U00133TP
+    initial_pose: {x: 0.9553, y: 0.2955, yaw: 1.8708}   # s0=0.3, l0=0.0
+
+  # Re-enable together with robot 3 in platoon.launch.py + desired_offsets.
+  # - vrpn_name: dji_robot_6
+  #   name: agent_3
+  #   serial_number: 3JKDH6C0019R0B
+  #   initial_pose: {x: 0.8253, y: 0.5646, yaw: 2.1708}   # s0=0.6, l0=0.0
+
+  # - vrpn_name: dji_robot_7
+  #   name: agent_4
+  #   serial_number: 3JKDH6C0017168
+  #   initial_pose: {x: -0.8628, y: -1.0998, yaw: 0.0504}
+
+  # - vrpn_name: dji_robot_9
+  #   name: agent_5
+  #   serial_number: 3JKDH6C0012Z43
+  #   initial_pose: {x: -1.3272, y: 0.3221, yaw: 1.4127}

@@ -1,7 +1,10 @@
 /**:
   ros__parameters:
-    R: 20.0
-    wheelbase: 2.5              # wheelbase (L)
+    R: 1.0                 # reference-path radius (metres) -- NOT a robot dimension
+    # --- Yahboom ROSMASTER R2 (Ackermann) approximate specs -- VERIFY against datasheet ---
+    wheelbase: 0.145       # front-to-rear axle distance (L). Sets turning radius = L/tan(phi).
+    wheel_radius: 0.0325   # ~65mm dia wheels (reference only; not used by the active controller)
+    mass: 0.8              # (reference only; not used by the active controller)
     frequency: 20.0
 
 model_simulation_node:
@@ -17,7 +20,10 @@ model_simulation_node:
     psi0: 0.0                   # initial psi (yaw/heading angle)
     v0: 0.0                     # initial velocity
 
-controller_node:
+# '/**/controller' matches the node named 'controller' under any namespace
+# (e.g. /agent_1/controller). A bare 'controller_node:' would NOT match, since
+# the launch file renames the node to 'controller' and namespaces it.
+"/**/controller":
   ros__parameters:
     gamma_alpha: 0.001
     gamma_beta: 0.0001
@@ -29,6 +35,10 @@ controller_node:
     alpha_bar_hat: 833.33 # 1.0
     beta_hat: -0.0001
     delta_hat: -0.1
+
+    alpha: 0.0012
+    beta: -0.0001
+    delta: -0.1
     
     k_a1: 1.5
     k_a2: 3.0
@@ -53,17 +63,19 @@ controller_node:
 #     k_a2: 3.0
 #     l_lane: 0.0
 
-formation_controller_node:
+# '/**/formation_controller' matches the node named 'formation_controller'
+# under any namespace (e.g. /agent_1/formation_controller).
+"/**/formation_controller":
   ros__parameters:
     # id: 1.0
     neighbor_id: [2]    # IDs of topological neighbors
-    namespace: "robot"
+    namespace: "agent"  # Must match omnisim/polytope_safety_net agent namespace
     
     k_s: 0.1 # 0.6
     k_l: 0.1
     k_n: 0.06           # Smooth deadzone design constant
 
-    v_f: 15.0           # Desired cruise speed (m/s)
+    v_f: 0.3           # Desired cruise speed (m/s)
     n_bar: 0.4          # Bounded noise threshold (m)
 
 # road_adaptation_node:

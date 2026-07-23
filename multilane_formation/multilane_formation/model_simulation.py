@@ -79,8 +79,6 @@ class ModelSimulationNode(Node):
         qos_profile = QoSProfile(depth=1, history=HistoryPolicy.KEEP_LAST)
 
         # Callbacks
-        # self.torque_sub = self.create_subscription(Float64, 'cntl_torque', self.torque_callback, qos_profile)
-        # self.phi_sub = self.create_subscription(Float64, 'cntl_phi', self.phi_callback, qos_profile)
         self.control_sub = self.create_subscription(Float64MultiArray, 'cntl_vector', self.cntl_callback, qos_profile)
 
         if self.id == 1:
