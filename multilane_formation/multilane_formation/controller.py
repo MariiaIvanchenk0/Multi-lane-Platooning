@@ -43,8 +43,8 @@ class ControllerNode(Node):
         super().__init__('controller_node')
         
         # Declare parameters (Longitudinal)
-        self.declare_parameter('k_1', 25.0)
-        self.declare_parameter('k_2', 1.5)
+        self.declare_parameter('k_1', 0.0)
+        self.declare_parameter('k_2', 0.0)
         self.declare_parameter('frequency', 20.0)
 
         self.declare_parameter('gamma_alpha', 0.001)
@@ -64,6 +64,8 @@ class ControllerNode(Node):
         self.declare_parameter('k_a2', 3.0)
         self.declare_parameter('l_lane', 0.0)
         self.declare_parameter('R', 1.0)
+        self.declare_parameter('center_x', 1.0)
+        self.declare_parameter('center_y', 1.0)
         self.declare_parameter('wheelbase', 0.145)
         # self.declare_parameter('wheel_radius', 0.035)
         # self.declare_parameter('mass', 2.5)
@@ -93,7 +95,7 @@ class ControllerNode(Node):
         # self.wheel_R = self.get_parameter('wheel_radius').value 
         # self.mass = self.get_parameter('mass').value
 
-        self.xc, self.yc = 0.0, 0.0
+        self.xc, self.yc = self.get_parameter('center_x').value, self.get_parameter('center_y').value
         self.prev_x, self.prev_y = None, None
         self.last_pose_stamp = None
         self.last_control_time = None
@@ -220,8 +222,8 @@ class ControllerNode(Node):
         # --- Step 5: Calculate Final Torque ---
         torque = self.alpha_bar_hat * tau
 
-        MAX_TORQUE = 2500.0
-        MIN_TORQUE = -1500.0
+        MAX_TORQUE = 500.0
+        MIN_TORQUE = 0.0
         torque = max(min(torque, MAX_TORQUE), MIN_TORQUE)
         self.prev_v_des = self.v_des
 
@@ -273,12 +275,12 @@ class ControllerNode(Node):
         self.raw_cmd_pub.publish(msg)
 
         # Throttled runtime readout of the tracking signals.
-        # self.get_logger().info(
-        #     f"v={v:.3f} v_des={self.v_des:.3f} e_v={e_v:.3f} "
-        #     f"l={l:.3f} l_des={self.l_des:.3f} psi={psi:.3f} "
-        #     f"torque={torque:.1f} phi={phi:.3f} -> cmd v={self.current_v:.3f} w={w:.3f}",
-        #     throttle_duration_sec=1.0,
-        # )
+        self.get_logger().info(
+            f"\nv={v:.3f} v_des={self.v_des:.3f} e_v={e_v:.3f}\n"
+            f"l={l:.3f} l_des={self.l_des:.3f} psi={psi:.3f}\n"
+            f"torque={torque:.1f} phi={phi:.3f} -> cmd v={self.current_v:.3f} w={w:.3f}",
+            throttle_duration_sec=1.0,
+        )
 
     def convert_to_twist(self, torque, steering_angle, dt):
         # 1. Torque -> Acceleration -> Linear Velocity (v_x)
