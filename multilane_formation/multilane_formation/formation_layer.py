@@ -106,26 +106,6 @@ class FormationControllerNode(Node):
                 qos_profile_sensor_data
             )
             self.neighbor_subs.append(sub)
-
-        # Startup readout of the effective (post-parameter) config. If any of
-        # these are wrong, params.yaml is not being applied to this node.
-        # self.get_logger().info(
-        #     f"[EFFECTIVE PARAMS] id={self.id} namespace='{self.namespace}' "
-        #     f"neighbor_ids={self.neighbor_ids} neighbor_topics={neighbor_topics} "
-        #     f"v_f={self.v_f} k_s={self.k_s} k_l={self.k_l} n_bar={self.n_bar} R={self.R}"
-        # )
-
-        # self.state_sub = self.create_subscription(Float64MultiArray, 'vehicle_state', self.state_callback, 10) 
-        # self.neighbor_subs = []
-        # for nid in self.neighbor_ids:
-        #     topic_name = f'/{self.namespace}_{nid}/vehicle_state'
-        #     sub = self.create_subscription(
-        #         Float64MultiArray, 
-        #         topic_name, 
-        #         lambda msg, nid=nid: self.neighbor_state_callback(msg, nid), 
-        #         10
-        #     )
-        #     self.neighbor_subs.append(sub)
         
         # Publisher & Timer
         if self.id == 1:
@@ -135,9 +115,6 @@ class FormationControllerNode(Node):
         self.tf_broadcaster = TransformBroadcaster(self)
         self.timer = self.create_timer(self.dt, self.control_loop_callback)
 
-    # def state_callback(self, msg):
-    #     self.state = msg.data
-
     def pose_callback(self, msg):
         """Receive the current pose of the vehicle and convert pose to Frenet coordinates (state)."""
         x = msg.pose.position.x
@@ -146,7 +123,7 @@ class FormationControllerNode(Node):
 
         # 1. Heading Error (psi) - FIXED ORDER
         theta = quaternion_to_yaw(q)
-        theta_center = math.atan2(y - self.yc, x - self.xc)  # MUST BE FIRST
+        theta_center = math.atan((y - self.yc) / (x - self.xc))  # MUST BE FIRST
         theta_r = theta_center + (math.pi / 2.0)
         psi = normalize_angle(theta - theta_r)
 
