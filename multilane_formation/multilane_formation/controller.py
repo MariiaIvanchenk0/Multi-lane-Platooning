@@ -268,17 +268,28 @@ class ControllerNode(Node):
         # self.control_pub.publish(msg)
 
         # Publishing data (raw_cmd_vel)
+        # Command the desired velocity directly (the Yahboom is velocity-
+        # controlled), and derive the turn rate from that SAME speed so the
+        # commanded curvature is w/v = tan(phi)/L, independent of the fragile
+        # internal torque->current_v model.
+        v_cmd = self.v_des
+        w = (v_cmd / self.L) * math.tan(phi) if abs(self.L) > 1e-5 else 0.0
+
+        # Keep the model integration running only so the log/adaptive terms
+        # stay populated; it no longer drives the output.
+        self.convert_to_twist(torque, phi, dt)
+
         msg = Twist()
-        w = self.convert_to_twist(torque, phi, dt)
-        msg.linear.x = self.current_v
-        msg.angular.z = w
+        msg.linear.x = float(v_cmd)
+        msg.angular.z = float(w)
         self.raw_cmd_pub.publish(msg)
 
         # Throttled runtime readout of the tracking signals.
         self.get_logger().info(
             f"\nv={v:.3f} v_des={self.v_des:.3f} e_v={e_v:.3f}\n"
-            f"l={l:.3f} l_des={self.l_des:.3f} psi={psi:.3f}\n"
-            f"torque={torque:.1f} phi={phi:.3f} -> cmd v={self.current_v:.3f} w={w:.3f}",
+            f"l={l:.3f} l_des={self.l_des:.3f} psi={psi:.3f} ({math.degrees(psi):.0f} deg)\n"
+            f"torque={torque:.1f} phi={phi:.3f} ({math.degrees(phi):.0f} deg) "
+            f"-> cmd v={v_cmd:.3f} w={w:.3f}",
             throttle_duration_sec=1.0,
         )
 
