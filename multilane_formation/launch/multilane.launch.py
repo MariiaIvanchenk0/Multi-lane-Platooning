@@ -27,53 +27,53 @@ def generate_launch_description():
     # [robot_id, initial_s, initial_l, initial_v, [neighbor_ids], assigned_lane]
     namespace = "robot"
     platoon_config = [
-        [1, 0.0, 0.0, 0.5, [2], 0.0],
-        [2, 1.2, 0.0, 0.5, [1], 0.0],
+        [1, 0.0, 0.0, 0.5, [1], 0.0],
+        # [2, 1.2, 0.0, 0.5, [1], 0.0],
     ]
 
-    assigned_lanes = [float(config[5]) for config in platoon_config]
-    unique_lanes = list(set(assigned_lanes + [0.0]))
+    # assigned_lanes = [float(config[5]) for config in platoon_config]
+    # unique_lanes = list(set(assigned_lanes + [0.0]))
 
     launch_nodes = [
         use_rviz_arg,
     ]
     
-    for robot_id, s0, l0, v0, neighbors, lane in platoon_config:
-        namespace_string = f"{namespace}_{robot_id}"
+    # for robot_id, s0, l0, v0, neighbors, lane in platoon_config:
+    #     namespace_string = f"{namespace}_{robot_id}"
         
-        robot_group = GroupAction([
-            PushRosNamespace(namespace_string),
+    #     robot_group = GroupAction([
+    #         PushRosNamespace(namespace_string),
 
-            Node(
-                package='multilane_formation',
-                executable='controller_node',
-                name='controller',
-                parameters=[params_config, {
-                    'l_lane': lane,
-                    'k_1': 3.0,
-                    'k_2': 0.3,
-                    'id': robot_id,
-                    's0': s0,
-                    'l0': l0,
-                    'v0': v0,
-                    'viz_lanes': unique_lanes,
-                }]
-            ),
+    #         Node(
+    #             package='multilane_formation',
+    #             executable='controller_node',
+    #             name='controller',
+    #             parameters=[params_config, {
+    #                 'l_lane': lane,
+    #                 'k_1': 3.0,
+    #                 'k_2': 0.3,
+    #                 'id': robot_id,
+    #                 's0': s0,
+    #                 'l0': l0,
+    #                 'v0': v0,
+    #                 'viz_lanes': unique_lanes,
+    #             }]
+    #         ),
 
-            Node(
-                package='multilane_formation',
-                executable='formation_controller_node',
-                name='formation_controller',
-                parameters=[params_config, {
-                    'id': robot_id,
-                    'neighbor_ids': neighbors,
-                    'l0': l0,
-                    'namespace': namespace,  # explicit so neighbor topics are always correct
-                }]
-            ),
-        ])
+    #         Node(
+    #             package='multilane_formation',
+    #             executable='formation_controller_node',
+    #             name='formation_controller',
+    #             parameters=[params_config, {
+    #                 'id': robot_id,
+    #                 'neighbor_ids': neighbors,
+    #                 'l0': l0,
+    #                 'namespace': namespace,  # explicit so neighbor topics are always correct
+    #             }]
+    #         ),
+    #     ])
         
-        launch_nodes.append(robot_group)
+    #     launch_nodes.append(robot_group)
 
     # ros2 launch vrpn_mocap client.launch.yaml server:=129.97.71.49 port:=3883
     remaps = [SetRemap(src=f'/vrpn_mocap/yahboom_{config[0]}/pose', dst=f'/robot_{config[0]}/pose') for config in platoon_config]

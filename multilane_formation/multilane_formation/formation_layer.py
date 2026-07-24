@@ -40,8 +40,10 @@ class FormationControllerNode(Node):
         self.declare_parameter('n_bar', 0.4)
         self.declare_parameter('l0', 0.0)
 
-        self.declare_parameter('R', 10.0)
-        self.declare_parameter('wheelbase', 2.5)
+        self.declare_parameter('R', 1.0)
+        self.declare_parameter('center_x', 1.0)
+        self.declare_parameter('center_y', 1.0)
+        self.declare_parameter('wheelbase', 0.145)
         self.declare_parameter('base_frame', 'robot_bs')
         self.declare_parameter('viz_lanes', [0.0])
         
@@ -63,14 +65,14 @@ class FormationControllerNode(Node):
         self.l_i_des = self.get_parameter('l0').value
         self.deg_i = len(self.neighbor_ids)
 
-        self.xc, self.yc = 0.0, 0.0
+        self.xc, self.yc = self.get_parameter('center_x').value, self.get_parameter('center_y').value
         self.prev_x, self.prev_y = None, None
         self.last_pose_stamp = None
         self.last_control_time = None
         self.neighbor_prev_positions = {}
         self.desired_offsets = {
             1: [0.0, 0.0],
-            2: [1.2, 0.0],
+            # 2: [1.2, 0.0],
             # 3: [-10.0, 2.0],
         }
         # self.desired_offsets = {
@@ -107,11 +109,11 @@ class FormationControllerNode(Node):
 
         # Startup readout of the effective (post-parameter) config. If any of
         # these are wrong, params.yaml is not being applied to this node.
-        self.get_logger().info(
-            f"[EFFECTIVE PARAMS] id={self.id} namespace='{self.namespace}' "
-            f"neighbor_ids={self.neighbor_ids} neighbor_topics={neighbor_topics} "
-            f"v_f={self.v_f} k_s={self.k_s} k_l={self.k_l} n_bar={self.n_bar} R={self.R}"
-        )
+        # self.get_logger().info(
+        #     f"[EFFECTIVE PARAMS] id={self.id} namespace='{self.namespace}' "
+        #     f"neighbor_ids={self.neighbor_ids} neighbor_topics={neighbor_topics} "
+        #     f"v_f={self.v_f} k_s={self.k_s} k_l={self.k_l} n_bar={self.n_bar} R={self.R}"
+        # )
 
         # self.state_sub = self.create_subscription(Float64MultiArray, 'vehicle_state', self.state_callback, 10) 
         # self.neighbor_subs = []
@@ -358,13 +360,13 @@ class FormationControllerNode(Node):
         neighbor_dump = {nid: [round(self.neighbor_states[nid][0], 3),
                                round(self.neighbor_states[nid][1], 3)]
                          for nid in self.neighbor_ids}
-        self.get_logger().info(
-            f"id={self.id} self[s,l]=[{s_i:.3f},{l_i:.3f}] "
-            f"neighbor[s,l]={neighbor_dump} "
-            f"err_s={total_error_s:.3f} err_l={total_error_l:.3f} "
-            f"-> v_des={v_i_des:.3f} l_des={self.l_i_des:.3f}",
-            throttle_duration_sec=1.0,
-        )
+        # self.get_logger().info(
+        #     f"id={self.id} self[s,l]=[{s_i:.3f},{l_i:.3f}] "
+        #     f"neighbor[s,l]={neighbor_dump} "
+        #     f"err_s={total_error_s:.3f} err_l={total_error_l:.3f} "
+        #     f"-> v_des={v_i_des:.3f} l_des={self.l_i_des:.3f}",
+        #     throttle_duration_sec=1.0,
+        # )
 
         if self.id == 1:
             self.publish_lane_centerline()

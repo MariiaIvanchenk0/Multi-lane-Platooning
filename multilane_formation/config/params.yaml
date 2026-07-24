@@ -1,6 +1,8 @@
 /**:
   ros__parameters:
     R: 1.0                 # reference-path radius (metres) -- NOT a robot dimension
+    center_x: 0.0031863994768225796
+    center_y: 0.04223778469821024
     # --- Yahboom ROSMASTER R2 (Ackermann) approximate specs -- VERIFY against datasheet ---
     wheelbase: 0.145       # front-to-rear axle distance (L). Sets turning radius = L/tan(phi).
     wheel_radius: 0.0325   # ~65mm dia wheels (reference only; not used by the active controller)
@@ -71,12 +73,12 @@ model_simulation_node:
     neighbor_id: [2]    # IDs of topological neighbors
     namespace: "robot"  # Must match omnisim/polytope_safety_net agent namespace
     
-    k_s: 0.1 # 0.6
-    k_l: 0.1
+    k_s: 0.4 # 0.6
+    k_l: 0.3
     k_n: 0.06           # Smooth deadzone design constant
 
     v_f: 0.3           # Desired cruise speed (m/s)
-    n_bar: 0.4          # Bounded noise threshold (m)
+    n_bar: 0.03          # Bounded noise threshold (m)
 
 # road_adaptation_node:
 #   ros__parameters:

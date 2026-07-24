@@ -7,24 +7,24 @@ from launch.conditions import IfCondition
 from launch.actions import DeclareLaunchArgument, GroupAction, ExecuteProcess
 
 params_config = os.path.join(get_package_share_directory('multilane_formation'), 'config', 'params.yaml')
-rviz_config = os.path.join(get_package_share_directory('multilane_formation'), 'config', 'config_sim.rviz')
+# rviz_config = os.path.join(get_package_share_directory('multilane_formation'), 'config', 'config2.rviz')
 
 def generate_launch_description():
-    use_rviz_arg = DeclareLaunchArgument(
-        'use_rviz',
-        default_value='false',
-        description='Start RViz and conditional nodes.'
-    )
+    # use_rviz_arg = DeclareLaunchArgument(
+    #     'use_rviz',
+    #     default_value='false',
+    #     description='Start RViz and conditional nodes.'
+    # )
 
-    use_rviz = LaunchConfiguration('use_rviz')
+    # use_rviz = LaunchConfiguration('use_rviz')
 
     # [robot_id, initial_s, initial_l, initial_v, [neighbor_ids], assigned_lane]
     # Must match the agent names in omnisim/polytope_safety_net's agents.yaml
     # (e.g. agent_1, agent_2, ...) so pose/cmd_vel topics actually connect.
-    namespace = "vrpn_mocap/yahboom"
+    namespace = "robot"
     platoon_config = [
-        [1,   0.0, 0.0, 0.5, [2], 0.0],
-        [2,  1.2, 0.0, 0.5, [1], 0.0],
+        [1,   0.0, 0.0, 0.5, [1], 0.0],
+        # [2,  1.2, 0.0, 0.5, [1], 0.0],
         # [3, -10.0, 2.0, 15.0, [1, 2], 2.0],
     ]
     # platoon_config = [
@@ -38,9 +38,7 @@ def generate_launch_description():
     assigned_lanes = [float(config[5]) for config in platoon_config]
     unique_lanes = list(set(assigned_lanes + [0.0]))
 
-    launch_nodes = [
-        use_rviz_arg,
-    ]
+    launch_nodes = []
     
     for robot_id, s0, l0, v0, neighbors, lane in platoon_config:
         namespace_string = f"{namespace}_{robot_id}"
@@ -91,13 +89,13 @@ def generate_launch_description():
         
         launch_nodes.append(robot_group)
 
-    rviz = ExecuteProcess(
-        cmd = [
-            'ros2', 'run', 'rviz2', 'rviz2', '-d', rviz_config
-        ], 
-        output = 'screen',
-        condition=IfCondition(use_rviz)
-    )
-    launch_nodes.append(rviz)
+    # rviz = ExecuteProcess(
+    #     cmd = [
+    #         'ros2', 'run', 'rviz2', 'rviz2', '-d', rviz_config
+    #     ], 
+    #     output = 'screen',
+    #     condition=IfCondition(use_rviz)
+    # )
+    # launch_nodes.append(rviz)
 
     return LaunchDescription(launch_nodes)

@@ -63,8 +63,8 @@ class ControllerNode(Node):
         self.declare_parameter('k_a1', 1.5)
         self.declare_parameter('k_a2', 3.0)
         self.declare_parameter('l_lane', 0.0)
-        self.declare_parameter('R', 20.0)
-        self.declare_parameter('wheelbase', 2.5)
+        self.declare_parameter('R', 1.0)
+        self.declare_parameter('wheelbase', 0.145)
         # self.declare_parameter('wheel_radius', 0.035)
         # self.declare_parameter('mass', 2.5)
 
@@ -113,17 +113,17 @@ class ControllerNode(Node):
         self.pose_sub = self.create_subscription(PoseStamped, 'pose', self.pose_callback, qos_profile_sensor_data)
 
         # self.control_pub = self.create_publisher(Float64MultiArray, 'cntl_vector', qos_profile_sensor_data)
-        self.raw_cmd_pub = self.create_publisher(Twist, 'raw_cmd_vel', qos_profile_sensor_data)
+        self.raw_cmd_pub = self.create_publisher(Twist, 'raw_cmd_vel', 10)
 
         self.timer = self.create_timer(self.dt, self.control_loop_callback)
 
         # Startup readout of the effective (post-parameter) config. If any of
         # these are wrong, params.yaml is not being applied to this node.
-        self.get_logger().info(
-            f"[EFFECTIVE PARAMS] k_1={self.k_1} k_2={self.k_2} "
-            f"k_a1={self.k_a1} k_a2={self.k_a2} alpha={self.alpha} "
-            f"alpha_bar_hat={self.alpha_bar_hat} R={self.R} L={self.L}"
-        )
+        # self.get_logger().info(
+        #     f"[EFFECTIVE PARAMS] k_1={self.k_1} k_2={self.k_2} "
+        #     f"k_a1={self.k_a1} k_a2={self.k_a2} alpha={self.alpha} "
+        #     f"alpha_bar_hat={self.alpha_bar_hat} R={self.R} L={self.L}"
+        # )
 
     # def state_callback(self, msg):
     #     self.state = msg.data
@@ -273,12 +273,12 @@ class ControllerNode(Node):
         self.raw_cmd_pub.publish(msg)
 
         # Throttled runtime readout of the tracking signals.
-        self.get_logger().info(
-            f"v={v:.3f} v_des={self.v_des:.3f} e_v={e_v:.3f} "
-            f"l={l:.3f} l_des={self.l_des:.3f} psi={psi:.3f} "
-            f"torque={torque:.1f} phi={phi:.3f} -> cmd v={self.current_v:.3f} w={w:.3f}",
-            throttle_duration_sec=1.0,
-        )
+        # self.get_logger().info(
+        #     f"v={v:.3f} v_des={self.v_des:.3f} e_v={e_v:.3f} "
+        #     f"l={l:.3f} l_des={self.l_des:.3f} psi={psi:.3f} "
+        #     f"torque={torque:.1f} phi={phi:.3f} -> cmd v={self.current_v:.3f} w={w:.3f}",
+        #     throttle_duration_sec=1.0,
+        # )
 
     def convert_to_twist(self, torque, steering_angle, dt):
         # 1. Torque -> Acceleration -> Linear Velocity (v_x)
