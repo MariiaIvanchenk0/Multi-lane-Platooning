@@ -64,8 +64,6 @@ def generate_launch_description():
                 name='controller',
                 parameters=[params_config, {
                     'l_lane': lane,
-                    'k_1': 3.0,
-                    'k_2': 0.3,
                     'id': robot_id,
                     's0': s0,
                     'l0': l0,

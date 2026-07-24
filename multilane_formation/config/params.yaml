@@ -34,7 +34,7 @@ model_simulation_node:
     k_1: 3.0
     k_2: 0.3
 
-    alpha_bar_hat: 833.33 # 1.0
+    alpha_bar_hat: 8003.33 # 1.0
     beta_hat: -0.0001
     delta_hat: -0.1
 

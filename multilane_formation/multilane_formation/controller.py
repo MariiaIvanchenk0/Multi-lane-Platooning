@@ -51,7 +51,7 @@ class ControllerNode(Node):
         self.declare_parameter('gamma_beta', 0.0001)
         self.declare_parameter('gamma_delta', 0.01)
         
-        self.declare_parameter('alpha_bar_hat', 833.33)    # Adaptive guess for (1 / alpha)
+        self.declare_parameter('alpha_bar_hat', 83.33)    # Adaptive guess for (1 / alpha)
         self.declare_parameter('beta_hat', -0.0001)     # Adaptive guess for aerodynamic drag coefficient
         self.declare_parameter('delta_hat', -0.1)       # Adaptive guess for constant disturbance/friction
 
@@ -220,14 +220,13 @@ class ControllerNode(Node):
         self.delta_hat = max(min(self.delta_hat, 0.0), -5.0)               
 
         # --- Step 5: Calculate Final Torque ---
-        torque = self.alpha_bar_hat * tau
-
-        # MAX_TORQUE = 1500.0
-        # MIN_TORQUE = -500.0
-        # torque = max(min(torque, MAX_TORQUE), MIN_TORQUE)
+        torque_raw = self.alpha_bar_hat * tau
+        MAX_TORQUE = 1500.0
+        MIN_TORQUE = -500.0
+        torque = max(min(torque_raw, MAX_TORQUE), MIN_TORQUE)
         self.prev_v_des = self.v_des
 
-        # self.get_logger().info(f"v: {v}, v_des: {self.v_des}")
+        self.get_logger().info(f"T: {torque} v: {v}, v_des: {self.v_des}")
 
         # Lateral Controller
         l = self.state[1]
@@ -283,13 +282,13 @@ class ControllerNode(Node):
         self.raw_cmd_pub.publish(msg)
 
         # Throttled runtime readout of the tracking signals.
-        self.get_logger().info(
-            f"\nv={v:.3f} v_des={self.v_des:.3f} e_v={e_v:.3f}\n"
-            f"l={l:.3f} l_des={self.l_des:.3f} psi={psi:.3f} ({math.degrees(psi):.0f} deg)\n"
-            f"torque={torque:.1f} phi={phi:.3f} ({math.degrees(phi):.0f} deg) "
-            f"-> cmd v={linear:.3f} w={angular:.3f}",
-            throttle_duration_sec=1.0,
-        )
+        # self.get_logger().info(
+        #     f"\nv={v:.3f} v_des={self.v_des:.3f} e_v={e_v:.3f}\n"
+        #     f"l={l:.3f} l_des={self.l_des:.3f} psi={psi:.3f} ({math.degrees(psi):.0f} deg)\n"
+        #     f"torque={torque:.1f} phi={phi:.3f} ({math.degrees(phi):.0f} deg) "
+        #     f"-> cmd v={linear:.3f} w={angular:.3f}",
+        #     throttle_duration_sec=1.0,
+        # )
 
     def convert_to_twist(self, torque, steering_angle):
         MAX_V = 10.0
