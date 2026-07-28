@@ -45,18 +45,6 @@ def generate_launch_description():
         
         robot_group = GroupAction([
             PushRosNamespace(namespace_string),
-            
-            # Node(
-            #     package='multilane_formation',
-            #     executable='model_simulation_node',
-            #     parameters=[params_config, {
-            #         'id': robot_id,
-            #         's0': s0,
-            #         'l0': l0,
-            #         'v0': v0,
-            #         'viz_lanes': unique_lanes,
-            #     }]
-            # ),
 
             Node(
                 package='multilane_formation',

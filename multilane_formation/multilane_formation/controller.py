@@ -176,56 +176,65 @@ class ControllerNode(Node):
     def control_loop_callback(self):
         # Use the actual elapsed wall/ROS time since the last call, not the
         # nominal 1/frequency period, since ROS timers can jitter under load.
-        now = self.get_clock().now().nanoseconds * 1e-9
-        if self.last_control_time is None:
-            dt = self.dt
-        else:
-            dt = now - self.last_control_time
-            if dt <= 0.0:
-                dt = self.dt
-        self.last_control_time = now
+        # now = self.get_clock().now().nanoseconds * 1e-9
+        # if self.last_control_time is None:
+        #     dt = self.dt
+        # else:
+        #     dt = now - self.last_control_time
+        #     if dt <= 0.0:
+        #         dt = self.dt
+        # self.last_control_time = now
 
         # Longitudinal Controller
-        v = self.state[3]
-        v_des_dot = (self.v_des - self.prev_v_des) / dt
+        # v = self.state[3]
+        # v_des_dot = (self.v_des - self.prev_v_des) / dt
 
         # --- Step 1: Calculate Velocity Error ---
-        e_v = v - self.v_des
+        # e_v = v - self.v_des
 
         # --- Step 2: Calculate Tau (Intermediate Control Action) ---
-        tau = (- self.k_1 * e_v
-               - self.k_2 * self.omega
-               - self.beta_hat * (v ** 2)
-               - self.delta_hat
-               + v_des_dot)
+        # tau = (- self.k_1 * e_v
+        #        - self.k_2 * self.omega
+        #        - self.beta_hat * (v ** 2)
+        #        - self.delta_hat
+        #        + v_des_dot)
 
-        # --- Step 3: Compute Adaptive Law Derivatives (ODEs) ---
-        omega_dot = e_v
-        alpha_bar_hat_dot = -self.gamma_alpha * e_v * tau
-        beta_hat_dot = self.gamma_beta * (v ** 2) * e_v
-        delta_hat_dot = self.gamma_delta * e_v
+        # --- Step 3: Compute Adaptive Law Derivatives (ODEs), Eq.14 ---
+        # omega_dot = e_v
+        # alpha_bar_hat_dot = -self.gamma_alpha * e_v * tau
+        # beta_hat_dot = self.gamma_beta * (v ** 2) * e_v
+        # delta_hat_dot = self.gamma_delta * e_v
 
-        # --- Step 4: Discrete Numerical Integration (Forward Euler) ---
-        self.omega += omega_dot * dt
-        self.alpha_bar_hat += alpha_bar_hat_dot * dt
-        self.beta_hat += beta_hat_dot * dt
-        self.delta_hat += delta_hat_dot * dt
-
-        if self.alpha_bar_hat < 0.0001:
-            self.alpha_bar_hat = 0.0001
-
-        self.omega = max(min(self.omega, 20.0), -20.0)
-
-        self.beta_hat = max(min(self.beta_hat, 0.0), -0.01)
-        self.delta_hat = max(min(self.delta_hat, 0.0), -5.0)               
-
-        # --- Step 5: Calculate Final Torque ---
-        torque = self.alpha_bar_hat * tau
-
+        # --- Step 5: Final Torque (Eq.10). Computed BEFORE integrating the
+        # adaptive/integral states so we can detect actuator saturation and do
+        # anti-windup. torque = alpha_bar_hat * tau, so it is O(1/alpha) ~ 800x
+        # tau -- a torque, NOT a velocity. ---
+        # torque_raw = self.alpha_bar_hat * tau
         # MAX_TORQUE = 1500.0
         # MIN_TORQUE = -500.0
-        # torque = max(min(torque, MAX_TORQUE), MIN_TORQUE)
-        self.prev_v_des = self.v_des
+        # torque = max(min(torque_raw, MAX_TORQUE), MIN_TORQUE)
+        # saturated = abs(torque - torque_raw) > 1e-9
+
+        # --- Step 4: Integrate adaptive/integral states (Forward Euler) WITH
+        # anti-windup. If the torque is pinned to a limit, the controller cannot
+        # act on the error, so continuing to integrate it just winds omega up
+        # against the rail -- that is exactly what drove torque hard negative.
+        # Freeze the integral states while saturated. ---
+        # if not saturated:
+        #     self.omega += omega_dot * dt
+        #     self.alpha_bar_hat += alpha_bar_hat_dot * dt
+        #     self.beta_hat += beta_hat_dot * dt
+        #     self.delta_hat += delta_hat_dot * dt
+
+        # if self.alpha_bar_hat < 0.0001:
+        #     self.alpha_bar_hat = 0.0001
+
+        # self.omega = max(min(self.omega, 20.0), -20.0)
+
+        # self.beta_hat = max(min(self.beta_hat, 0.0), -0.01)
+        # self.delta_hat = max(min(self.delta_hat, 0.0), -5.0)
+
+        # self.prev_v_des = self.v_des
 
         # self.get_logger().info(f"v: {v}, v_des: {self.v_des}")
 
@@ -235,7 +244,7 @@ class ControllerNode(Node):
         
         # --- Step 1: Calculate Errors ---
         e_psi = -psi
-        e_lat = self.l_des - l # self.l_lane - 
+        e_lat = l - self.l_des # self.l_lane - 
         
         # --- Step 2: Calculate Steering Angle Components ---
         numerator = -math.cos(e_psi) * e_lat - (self.k_a1 + self.k_a2) * math.sin(e_psi)
@@ -268,40 +277,46 @@ class ControllerNode(Node):
         # self.control_pub.publish(msg)
 
         # Publishing data (raw_cmd_vel)
-        # Command the desired velocity directly (the Yahboom is velocity-
-        # controlled), and derive the turn rate from that SAME speed so the
-        # commanded curvature is w/v = tan(phi)/L, independent of the fragile
-        # internal torque->current_v model.
-
-        # Keep the model integration running only so the log/adaptive terms
-        # stay populated; it no longer drives the output.
-        linear, angular = self.convert_to_twist(torque, phi)
+        # Closed-loop torque control: the adaptive longitudinal controller
+        # produces a torque, which convert_to_twist turns into a velocity
+        # command via the plant model (torque -> acceleration -> velocity). The
+        # turn rate is derived from that same commanded speed so curvature is
+        # w/v = tan(phi)/L.
+        
+        angular = self.convert_to_twist(self.v_des, phi)
 
         msg = Twist()
-        msg.linear.x = float(linear)
+        msg.linear.x = self.v_de
         msg.angular.z = float(angular)
         self.raw_cmd_pub.publish(msg)
 
         # Throttled runtime readout of the tracking signals.
         self.get_logger().info(
-            f"\nv={v:.3f} v_des={self.v_des:.3f} e_v={e_v:.3f}\n"
+            f"\nv_des={self.v_des:.3f}\n"
             f"l={l:.3f} l_des={self.l_des:.3f} psi={psi:.3f} ({math.degrees(psi):.0f} deg)\n"
-            f"torque={torque:.1f} phi={phi:.3f} ({math.degrees(phi):.0f} deg) "
-            f"-> cmd v={linear:.3f} w={angular:.3f}",
+            f"-> cmd v={msg.linear.x} w={msg.angular.x}",
             throttle_duration_sec=1.0,
         )
 
     def convert_to_twist(self, torque, steering_angle):
-        MAX_V = 10.0
-        MIN_V = -10.0
-        v = max(min(torque, MAX_V), MIN_V)
+        # Close the longitudinal loop. Torque is an ACCELERATION source, not a
+        # velocity: the plant (paper Eq.2) is  a = alpha*T + beta*v^2 + delta.
+        # Integrate that acceleration into the commanded velocity current_v, and
+        # command THAT to the (velocity-controlled) robot. The controller reads
+        # the measured speed back as e_v, so the loop is closed through the real
+        # robot + mocap; torque no longer appears directly as a speed.
+        # acceleration = self.alpha * torque + self.beta * (self.current_v ** 2) + self.delta
+        # self.current_v += acceleration * dt
+
+        # V_MAX = 1.0   # Yahboom realistic top speed (m/s); forward-only
+        # self.current_v = max(min(self.current_v, V_MAX), 0.0)
 
         if abs(self.L) > 1e-5:
-            omega_z = (v / self.L) * math.tan(steering_angle)
+            omega_z = (torque / self.L) * math.tan(steering_angle)
         else:
             omega_z = 0.0
 
-        return float(v), float(omega_z)
+        return float(omega_z)
 
 def quaternion_to_yaw(q):
     siny_cosp = 2 * (q.w * q.z + q.x * q.y)

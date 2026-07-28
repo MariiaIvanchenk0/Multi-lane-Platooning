@@ -6,7 +6,7 @@
     # --- Yahboom ROSMASTER R2 (Ackermann) approximate specs -- VERIFY against datasheet ---
     wheelbase: 0.22       # front-to-rear axle distance (L). Sets turning radius = L/tan(phi).
     wheel_radius: 0.0325   # ~65mm dia wheels (reference only; not used by the active controller)
-    mass: 0.8              # (reference only; not used by the active controller)
+    mass: 1.5              # (reference only; not used by the active controller)
     frequency: 20.0
 
 model_simulation_node:
