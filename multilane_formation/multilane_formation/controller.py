@@ -51,7 +51,7 @@ class ControllerNode(Node):
         self.declare_parameter('gamma_beta', 0.0001)
         self.declare_parameter('gamma_delta', 0.01)
         
-        self.declare_parameter('alpha_bar_hat', 833.33)    # Adaptive guess for (1 / alpha)
+        self.declare_parameter('alpha_bar_hat', 83.33)    # Adaptive guess for (1 / alpha)
         self.declare_parameter('beta_hat', -0.0001)     # Adaptive guess for aerodynamic drag coefficient
         self.declare_parameter('delta_hat', -0.1)       # Adaptive guess for constant disturbance/friction
 
@@ -236,7 +236,7 @@ class ControllerNode(Node):
 
         # self.prev_v_des = self.v_des
 
-        # self.get_logger().info(f"v: {v}, v_des: {self.v_des}")
+        self.get_logger().info(f"T: {torque} v: {v}, v_des: {self.v_des}")
 
         # Lateral Controller
         l = self.state[1]
