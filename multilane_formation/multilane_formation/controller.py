@@ -149,7 +149,7 @@ class ControllerNode(Node):
 
         # 1. Heading Error (psi)
         theta = quaternion_to_yaw(q)
-        theta_center = math.atan((y - self.yc) / (x - self.xc))
+        theta_center = math.atan2(y - self.yc, x - self.xc)
         theta_r = theta_center + (math.pi / 2.0)
         psi = normalize_angle(theta - theta_r)
 
@@ -160,6 +160,20 @@ class ControllerNode(Node):
         # 3. Lateral error (l)
         dist_from_center = math.hypot(x - self.xc, y - self.yc)
         l = dist_from_center - self.R
+
+        # --- Frame/convention diagnostic ---------------------------------------
+        # Point the robot along its INTENDED travel direction while on the circle:
+        #   psi ~ 0     -> heading convention correct
+        #   psi ~ +/-180 or wrong sign -> travel-direction / yaw-sign mismatch
+        #     (fix theta_r's +/-pi/2, the feed-forward sign, and v_f together)
+        # theta_center should sweep the full -180..+180 as the robot goes around;
+        # if it only ever stays within -90..+90, line 152 is still math.atan.
+        self.get_logger().info(
+            f"pose x={x:.3f} y={y:.3f}  "
+            f"theta={math.degrees(theta):.1f}  theta_c={math.degrees(theta_center):.1f}  "
+            f"theta_r={math.degrees(theta_r):.1f}  psi={math.degrees(psi):.1f}  l={l:.3f}",
+            throttle_duration_sec=0.3,
+        )
 
         # 4. Linear velocity (v) -- uses the actual elapsed time between pose
         # messages (from the message timestamp), not the nominal control-loop
@@ -307,12 +321,12 @@ class ControllerNode(Node):
         msg.angular.z = angular
         self.raw_cmd_pub.publish(msg)
 
-        tan_phi = math.tan(phi)
-        r_cmd = self.L / tan_phi if abs(tan_phi) > 1e-6 else float('inf')
-        r_expected = self.R + self.l_des
-        self.get_logger().info(
-            f"phi: {phi}, expected: {math.atan(self.L / r_expected)}\n"
-        )
+        # tan_phi = math.tan(phi)
+        # r_cmd = self.L / tan_phi if abs(tan_phi) > 1e-6 else float('inf')
+        # r_expected = self.R + self.l_des
+        # self.get_logger().info(
+        #     f"phi: {phi}, expected: {math.atan(self.L / r_expected)}\n"
+        # )
 
         # Throttled runtime readout of the tracking signals.
         # self.get_logger().info(
