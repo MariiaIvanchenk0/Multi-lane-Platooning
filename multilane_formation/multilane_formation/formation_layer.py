@@ -123,7 +123,7 @@ class FormationControllerNode(Node):
 
         # 1. Heading Error (psi) - FIXED ORDER
         theta = quaternion_to_yaw(q)
-        theta_center = math.atan((y - self.yc) / (x - self.xc))  # MUST BE FIRST
+        theta_center = math.atan2((y - self.yc), (x - self.xc))  # MUST BE FIRST
         theta_r = theta_center + (math.pi / 2.0)
         psi = normalize_angle(theta - theta_r)
 

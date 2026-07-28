@@ -236,7 +236,7 @@ class ControllerNode(Node):
 
         # self.prev_v_des = self.v_des
 
-        self.get_logger().info(f"T: {torque} v: {v}, v_des: {self.v_des}")
+        # self.get_logger().info(f"T: {torque} v: {v}, v_des: {self.v_des}")
 
         # Lateral Controller
         l = self.state[1]
@@ -286,7 +286,7 @@ class ControllerNode(Node):
         angular = self.convert_to_twist(self.v_des, phi)
 
         msg = Twist()
-        msg.linear.x = self.v_de
+        msg.linear.x = self.v_des
         msg.angular.z = float(angular)
         self.raw_cmd_pub.publish(msg)
 
