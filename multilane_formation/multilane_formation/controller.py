@@ -60,13 +60,13 @@ class ControllerNode(Node):
         self.declare_parameter('delta', -0.1)
 
         # Declare parameters (Lateral)
-        self.declare_parameter('k_a1', 1.5)
-        self.declare_parameter('k_a2', 3.0)
+        self.declare_parameter('k_a1', 0.5)
+        self.declare_parameter('k_a2', 1.0)
         self.declare_parameter('l_lane', 0.0)
         self.declare_parameter('R', 1.0)
         self.declare_parameter('center_x', 1.0)
         self.declare_parameter('center_y', 1.0)
-        self.declare_parameter('wheelbase', 0.145)
+        self.declare_parameter('wheelbase', 0.125)
         # self.declare_parameter('wheel_radius', 0.035)
         # self.declare_parameter('mass', 2.5)
 
@@ -99,6 +99,8 @@ class ControllerNode(Node):
         self.prev_x, self.prev_y = None, None
         self.last_pose_stamp = None
         self.last_control_time = None
+        self.prev_theta = None
+        self.meas_radius =None
         self.current_v = 0.0
         self.prev_v_des = 0.0
         self.v_des = 0.0
@@ -166,8 +168,18 @@ class ControllerNode(Node):
                 dist_moved = math.hypot(x - self.prev_x, y - self.prev_y)
                 v = dist_moved / dt_pose
 
+            if self.prev_theta is not None and dist_moved > 1e-4:
+                dtheta = normalize_angle(theta - self.prev_theta)
+                if abs(dtheta) > 1e-4:
+                    r_inst = dist_moved / dtheta
+                    if self.meas_radius is None:
+                        self.meas_radius = r_inst
+                    else:
+                        self.meas_radius = 0.7 * self.meas_radius + 0.3 * r_inst
+
         self.prev_x = x
         self.prev_y = y
+        self.prev_theta = theta
         self.last_pose_stamp = stamp
 
         self.state = [s, l, psi, v]
@@ -287,16 +299,23 @@ class ControllerNode(Node):
 
         msg = Twist()
         msg.linear.x = self.v_des
-        msg.angular.z = float(angular)
+        msg.angular.z = angular
         self.raw_cmd_pub.publish(msg)
 
-        # Throttled runtime readout of the tracking signals.
+        tan_phi = math.tan(phi)
+        r_cmd = self.L / tan_phi if abs(tan_phi) > 1e-6 else float('inf')
+        r_expected = self.R + self.l_des
         self.get_logger().info(
-            f"\nv_des={self.v_des:.3f}\n"
-            f"l={l:.3f} l_des={self.l_des:.3f} psi={psi:.3f} ({math.degrees(psi):.0f} deg)\n"
-            f"-> cmd v={msg.linear.x} w={msg.angular.x}",
-            throttle_duration_sec=1.0,
+            f"phi: {phi}, expected: {math.atan(self.L / r_expected)}\n"
         )
+
+        # Throttled runtime readout of the tracking signals.
+        # self.get_logger().info(
+        #     f"\nv_des={self.v_des:.3f}\n"
+        #     f"l={l:.3f} l_des={self.l_des:.3f} psi={psi:.3f} ({math.degrees(psi):.0f} deg)\n"
+        #     f"-> cmd v={msg.linear.x} w={msg.angular.x}",
+        #     throttle_duration_sec=1.0,
+        # )
 
     def convert_to_twist(self, torque, steering_angle):
         # Close the longitudinal loop. Torque is an ACCELERATION source, not a

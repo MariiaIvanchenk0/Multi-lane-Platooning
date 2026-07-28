@@ -43,7 +43,7 @@ class FormationControllerNode(Node):
         self.declare_parameter('R', 1.0)
         self.declare_parameter('center_x', 0.0)
         self.declare_parameter('center_y', 0.0)
-        self.declare_parameter('wheelbase', 0.145)
+        self.declare_parameter('wheelbase', 0.125)
         self.declare_parameter('base_frame', 'robot_bs')
         self.declare_parameter('viz_lanes', [0.0])
         
@@ -123,7 +123,7 @@ class FormationControllerNode(Node):
 
         # 1. Heading Error (psi) - FIXED ORDER
         theta = quaternion_to_yaw(q)
-        theta_center = math.atan2((y - self.yc), (x - self.xc))  # MUST BE FIRST
+        theta_center = math.atan((y - self.yc)/ (x - self.xc))  # MUST BE FIRST
         theta_r = theta_center + (math.pi / 2.0)
         psi = normalize_angle(theta - theta_r)
 
@@ -161,7 +161,7 @@ class FormationControllerNode(Node):
 
         # 1. Heading Error (psi_j)
         theta_j = quaternion_to_yaw(q_j)
-        theta_center_j = math.atan2(y_j - self.yc, x_j - self.xc)
+        theta_center_j = math.atan((y_j - self.yc) / (x_j - self.xc))
         theta_r_j = theta_center_j + (math.pi / 2.0)
         psi_j = normalize_angle(theta_j - theta_r_j)
 
@@ -334,9 +334,9 @@ class FormationControllerNode(Node):
 
         # Throttled runtime readout. If neighbor s/l stay at 0.0 forever, the
         # neighbor pose subscription is not receiving data (wrong topic).
-        neighbor_dump = {nid: [round(self.neighbor_states[nid][0], 3),
-                               round(self.neighbor_states[nid][1], 3)]
-                         for nid in self.neighbor_ids}
+        # neighbor_dump = {nid: [round(self.neighbor_states[nid][0], 3),
+        #                        round(self.neighbor_states[nid][1], 3)]
+        #                  for nid in self.neighbor_ids}
         # self.get_logger().info(
         #     f"id={self.id} self[s,l]=[{s_i:.3f},{l_i:.3f}] "
         #     f"neighbor[s,l]={neighbor_dump} "
@@ -394,8 +394,8 @@ class FormationControllerNode(Node):
             for i in range(num_points + 1):
                 theta_r = (2.0 * math.pi / num_points) * i
                 p = Point()
-                p.x = (self.R + lane_offset) * math.cos(theta_r)
-                p.y = (self.R + lane_offset) * math.sin(theta_r)
+                p.x = self.xc + (self.R + lane_offset) * math.cos(theta_r)
+                p.y = self.yc + (self.R + lane_offset) * math.sin(theta_r)
                 p.z = 0.0
                 marker.points.append(p)
 

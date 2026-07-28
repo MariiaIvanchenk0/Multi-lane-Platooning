@@ -1,10 +1,10 @@
 /**:
   ros__parameters:
     R: 1.0                 # reference-path radius (metres) -- NOT a robot dimension
-    center_x: 0.0031863994768225796
-    center_y: 0.04223778469821024
+    center_x:  1.103482127188517
+    center_y: 0.06993669405299056
     # --- Yahboom ROSMASTER R2 (Ackermann) approximate specs -- VERIFY against datasheet ---
-    wheelbase: 0.22       # front-to-rear axle distance (L). Sets turning radius = L/tan(phi).
+    wheelbase: 0.145       # front-to-rear axle distance (L). Sets turning radius = L/tan(phi).
     wheel_radius: 0.0325   # ~65mm dia wheels (reference only; not used by the active controller)
     mass: 1.5              # (reference only; not used by the active controller)
     frequency: 20.0
@@ -42,9 +42,9 @@ model_simulation_node:
     beta: -0.0001
     delta: -0.1
     
-    k_a1: 1.5
-    k_a2: 3.0
-    l_lane: 0.0
+    k_a1: 0.5
+    k_a2: 1.0
+    # l_lane: 0.0
 
 # longitudinal_controller_node:
 #   ros__parameters:
