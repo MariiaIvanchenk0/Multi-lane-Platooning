@@ -123,11 +123,16 @@ class ControllerNode(Node):
 
         # Startup readout of the effective (post-parameter) config. If any of
         # these are wrong, params.yaml is not being applied to this node.
-        # self.get_logger().info(
-        #     f"[EFFECTIVE PARAMS] k_1={self.k_1} k_2={self.k_2} "
-        #     f"k_a1={self.k_a1} k_a2={self.k_a2} alpha={self.alpha} "
-        #     f"alpha_bar_hat={self.alpha_bar_hat} R={self.R} L={self.L}"
-        # )
+        # These are exactly the values that set the commanded radius = L / tan(phi),
+        # so verify them against what you expect before trusting the radius log.
+        self.get_logger().info(
+            "[EFFECTIVE PARAMS] "
+            f"R={self.R}  wheelbase(L)={self.L}  "
+            f"center=({self.xc:.4f}, {self.yc:.4f})  "
+            f"k_a1={self.k_a1}  k_a2={self.k_a2}  l_lane={self.l_lane}  "
+            f"frequency={self.get_parameter('frequency').value}  "
+            f"expected_ff_steer={math.degrees(math.atan(self.L / self.R)):.2f}deg (at l_des=0)"
+        )
 
     # def state_callback(self, msg):
     #     self.state = msg.data
