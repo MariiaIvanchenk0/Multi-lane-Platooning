@@ -313,7 +313,8 @@ class ControllerNode(Node):
         meas = self.meas_radius if self.meas_radius is not None else float('nan')
         self.get_logger().info(
             f"RADIUS cmd={r_cmd:.3f} meas={meas:.3f} expected={r_expected:.3f}  "
-            f"phi={math.degrees(phi):.1f}deg phi_ff_expected={math.degrees(phi_expected):.1f}deg",
+            f"phi={math.degrees(phi):.1f}deg phi_ff_expected={math.degrees(phi_expected):.1f}deg  "
+            f"| l={l:.3f} psi={math.degrees(psi):.1f}deg  (feedback_steer={math.degrees(phi - phi_feedforward):.1f}deg)",
             throttle_duration_sec=0.5,
         )
 
