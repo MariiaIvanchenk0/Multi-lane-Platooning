@@ -61,7 +61,7 @@ class ControllerNode(Node):
 
         # Declare parameters (Lateral)
         self.declare_parameter('k_a1', 0.5)
-        self.declare_parameter('k_a2', 1.0)
+        self.declare_parameter('k_a2', 0.5)
         self.declare_parameter('l_lane', 0.0)
         self.declare_parameter('R', 1.0)
         self.declare_parameter('center_x', 1.0)
@@ -100,9 +100,13 @@ class ControllerNode(Node):
         self.last_pose_stamp = None
         self.last_control_time = None
         self.prev_theta = None
-        self.meas_radius =None
+        self.meas_radius = None
         self.current_v = 0.0
         self.prev_v_des = 0.0
+
+        self.ki = 0.5
+        self.l_integral = 0.0
+
         self.v_des = 0.0
         self.l_des = 0.0
         self.omega = 0.0          # Accumulated velocity error state
@@ -276,6 +280,12 @@ class ControllerNode(Node):
         # --- Step 1: Calculate Errors ---
         e_psi = -psi
         e_lat = l - self.l_des # self.l_lane - 
+
+        PHI_I_MAX = math.radians(15)
+        self.l_integral += l * self.dt
+        phi_integral = self.ki * self.l_integral
+        phi_integral = max(min(phi_integral, PHI_I_MAX), -PHI_I_MAX)
+        self.l_integral = max(min(self.l_integral, PHI_I_MAX/self.ki), -PHI_I_MAX/self.ki)
         
         # --- Step 2: Calculate Steering Angle Components ---
         numerator = -math.cos(e_psi) * e_lat - (self.k_a1 + self.k_a2) * math.sin(e_psi)
@@ -287,7 +297,7 @@ class ControllerNode(Node):
         r_lane = self.R + self.l_des
         phi_feedforward = math.atan(self.L / r_lane) if abs(r_lane) > 1e-6 else 0.0
 
-        phi = math.atan(numerator / denominator) + phi_feedforward
+        phi = math.atan(numerator / denominator) + phi_feedforward + phi_integral
         # phi = math.atan2(numerator, denominator)
 
         # Yahboom R2 Ackermann steering servo maxes out around +/-30 deg, not 45.
@@ -311,11 +321,11 @@ class ControllerNode(Node):
         r_expected = self.R + self.l_des
         phi_expected = math.atan(self.L / r_expected) if abs(r_expected) > 1e-6 else 0.0
         meas = self.meas_radius if self.meas_radius is not None else float('nan')
-        self.get_logger().info(
-            f"RADIUS cmd={r_cmd:.3f} meas={meas:.3f} expected={r_expected:.3f}  "
-            f"phi={math.degrees(phi):.1f}deg phi_ff_expected={math.degrees(phi_expected):.1f}deg",
-            throttle_duration_sec=0.5,
-        )
+        # self.get_logger().info(
+        #     f"RADIUS cmd={r_cmd:.3f} meas={meas:.3f} expected={r_expected:.3f}  "
+        #     f"phi={math.degrees(phi):.1f}deg phi_ff_expected={math.degrees(phi_expected):.1f}deg",
+        #     throttle_duration_sec=0.5,
+        # )
 
         # Throttled runtime readout of the tracking signals.
         # self.get_logger().info(

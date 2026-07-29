@@ -310,8 +310,8 @@ class FormationControllerNode(Node):
         u_is = self.k_s * filtered_error_s + self.v_f
         u_il = self.k_l * filtered_error_l
 
-        U_MIN = 0.1
-        U_MAX = 0.6
+        U_MIN = 0.0
+        U_MAX = 1.0
         u_is = max(min(u_is, U_MAX), U_MIN)
         # u_il = max(min(u_il, 5.0), -5.0)
 
@@ -323,8 +323,8 @@ class FormationControllerNode(Node):
         # lateral position drifts unbounded (l_des was reaching 1.7+ on a 1m
         # track), pushing the robot off the circle until the controller diverges.
         # Keep it within the reachable lane band around the centre.
-        L_DES_MIN = -0.5
-        L_DES_MAX = 0.5
+        L_DES_MIN = -1.0
+        L_DES_MAX = 1.0
         self.l_i_des = max(min(self.l_i_des, L_DES_MAX), L_DES_MIN)
         
         # --- Step 5: Publish Control Vector ---
