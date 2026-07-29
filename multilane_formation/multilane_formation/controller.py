@@ -284,12 +284,6 @@ class ControllerNode(Node):
         if abs(denominator) < 1e-6:
             denominator = 1e-6 if denominator >= 0 else -1e-6
 
-        # Curvature feed-forward. The paper's feedback law assumes a straight /
-        # gently-curved lane, so at zero error it commands zero steering. On a
-        # curved path the Ackermann car must hold a steady steering angle
-        # atan(L / R_lane) just to stay on the curve, otherwise it drives
-        # straight and drifts outward. R_lane is the radius of the lane the
-        # robot is tracking (R + l_des); positive => steer left for CCW travel.
         r_lane = self.R + self.l_des
         phi_feedforward = math.atan(self.L / r_lane) if abs(r_lane) > 1e-6 else 0.0
 
@@ -300,20 +294,6 @@ class ControllerNode(Node):
         MAX_STEER = math.radians(30.0)
         phi = max(min(phi, MAX_STEER), -MAX_STEER)
         
-        # self.get_logger().info(f"phi: {phi}, l_des: {self.l_des}")
-
-        # # Publishing data (cntr_vector)
-        # msg = Float64MultiArray()
-        # msg.data = [torque, phi]
-        # self.control_pub.publish(msg)
-
-        # Publishing data (raw_cmd_vel)
-        # Closed-loop torque control: the adaptive longitudinal controller
-        # produces a torque, which convert_to_twist turns into a velocity
-        # command via the plant model (torque -> acceleration -> velocity). The
-        # turn rate is derived from that same commanded speed so curvature is
-        # w/v = tan(phi)/L.
-        
         angular = self.convert_to_twist(self.v_des, phi)
 
         msg = Twist()
@@ -321,12 +301,21 @@ class ControllerNode(Node):
         msg.angular.z = angular
         self.raw_cmd_pub.publish(msg)
 
-        # tan_phi = math.tan(phi)
-        # r_cmd = self.L / tan_phi if abs(tan_phi) > 1e-6 else float('inf')
-        # r_expected = self.R + self.l_des
-        # self.get_logger().info(
-        #     f"phi: {phi}, expected: {math.atan(self.L / r_expected)}\n"
-        # )
+        # --- Radius / steering diagnostic (dynamic test) -----------------------
+        # phi oscillating (e.g. 0.05..0.35) -> loop not converging (weaving),
+        #   look at psi/direction/gains.
+        # phi steady near phi_ff_expected but meas < expected -> wheelbase:
+        #   real radius = (R+l_des) * (L_real / L_config); fix wheelbase.
+        tan_phi = math.tan(phi)
+        r_cmd = self.L / tan_phi if abs(tan_phi) > 1e-6 else float('inf')
+        r_expected = self.R + self.l_des
+        phi_expected = math.atan(self.L / r_expected) if abs(r_expected) > 1e-6 else 0.0
+        meas = self.meas_radius if self.meas_radius is not None else float('nan')
+        self.get_logger().info(
+            f"RADIUS cmd={r_cmd:.3f} meas={meas:.3f} expected={r_expected:.3f}  "
+            f"phi={math.degrees(phi):.1f}deg phi_ff_expected={math.degrees(phi_expected):.1f}deg",
+            throttle_duration_sec=0.5,
+        )
 
         # Throttled runtime readout of the tracking signals.
         # self.get_logger().info(
@@ -337,12 +326,6 @@ class ControllerNode(Node):
         # )
 
     def convert_to_twist(self, torque, steering_angle):
-        # Close the longitudinal loop. Torque is an ACCELERATION source, not a
-        # velocity: the plant (paper Eq.2) is  a = alpha*T + beta*v^2 + delta.
-        # Integrate that acceleration into the commanded velocity current_v, and
-        # command THAT to the (velocity-controlled) robot. The controller reads
-        # the measured speed back as e_v, so the loop is closed through the real
-        # robot + mocap; torque no longer appears directly as a speed.
         # acceleration = self.alpha * torque + self.beta * (self.current_v ** 2) + self.delta
         # self.current_v += acceleration * dt
 
