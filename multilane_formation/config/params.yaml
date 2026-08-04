@@ -40,5 +40,5 @@
     k_l: 0.3
     k_n: 0.06           # Smooth deadzone design constant
 
-    v_f: 0.7           # Desired cruise speed (m/s)
+    v_f: 0.3           # Desired cruise speed (m/s)
     n_bar: 0.03          # Bounded noise threshold (m)

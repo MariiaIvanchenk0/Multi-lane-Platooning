@@ -24,7 +24,7 @@ def generate_launch_description():
     namespace = "robot"
     platoon_config = [
         [1, 0.0, 0.0, 0.3, [2], 0.0],
-        [2,  0.0, 0.0, 0.3, [1], 0.0],
+        [2,  1.2, 0.0, 0.3, [1], 0.0],
         # [3, -10.0, 2.0, 15.0, [1, 2], 2.0],
     ]
     # platoon_config = [
