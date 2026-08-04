@@ -43,7 +43,7 @@ class FormationControllerNode(Node):
         self.declare_parameter('R', 1.0)
         self.declare_parameter('center_x', 0.0)
         self.declare_parameter('center_y', 0.0)
-        self.declare_parameter('wheelbase', 0.145)
+        self.declare_parameter('wheelbase', 0.23)
         self.declare_parameter('base_frame', 'robot_bs')
         self.declare_parameter('viz_lanes', [0.0])
         

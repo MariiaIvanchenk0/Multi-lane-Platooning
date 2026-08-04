@@ -4,12 +4,12 @@
     frequency: 20.0
     center_x: 1.103482127188517
     center_y: 0.06993669405299056
-    wheelbase: 0.145       # front-to-rear axle distance (L). Sets turning radius = L/tan(phi).
+    wheelbase: 0.23       # front-to-rear axle distance (L). Sets turning radius = L/tan(phi).
 
 "/**/controller":
   ros__parameters:
-    k_1: 1.0 # 3.0
-    k_2: 0.1 # 0.3
+    k_1: 3.0 # 3.0
+    k_2: 0.3 # 0.3
     V_MAX: 1.0
 
     alpha: 0.01 # 0.0012
@@ -26,8 +26,8 @@
     
     k_a1: 0.5
     k_a2: 0.5
-    ki: 0.5
-    PHI_MAX: 15.0
+    ki: 0.3
+    PHI_MAX: 20.0
     l_lane: 0.0
 
 

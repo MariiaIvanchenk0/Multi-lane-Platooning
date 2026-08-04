@@ -45,11 +45,11 @@ class ControllerNode(Node):
         self.declare_parameter('frequency', 20.0)
         self.declare_parameter('center_x', 0.0)
         self.declare_parameter('center_y', 0.0)
-        self.declare_parameter('wheelbase', 0.145)
+        self.declare_parameter('wheelbase', 0.23)
         
         # Declare parameters (Longitudinal)
-        self.declare_parameter('k_1', 1.0)
-        self.declare_parameter('k_2', 0.1)
+        self.declare_parameter('k_1', 3.0)
+        self.declare_parameter('k_2', 0.3)
         self.declare_parameter('V_MAX', 1.0)
 
         self.declare_parameter('alpha', 0.01)
@@ -67,8 +67,8 @@ class ControllerNode(Node):
         # Declare parameters (Lateral)
         self.declare_parameter('k_a1', 0.5)
         self.declare_parameter('k_a2', 0.5)
-        self.declare_parameter('ki', 0.5)
-        self.declare_parameter('PHI_MAX', 17.0)
+        self.declare_parameter('ki', 0.3)
+        self.declare_parameter('PHI_MAX', 20.0)
         self.declare_parameter('l_lane', 0.0)
 
         # Get parameters (Longitudinal)
@@ -221,6 +221,7 @@ class ControllerNode(Node):
             self.alpha_bar_hat += alpha_bar_hat_dot * self.dt
             self.beta_hat      += beta_hat_dot * self.dt
             self.delta_hat     += delta_hat_dot * self.dt
+
         # self.omega = max(min(self.omega, 20.0), -20.0)
         # self.alpha_bar_hat = max(self.alpha_bar_hat, 1e-4)
         # self.beta_hat  = max(min(self.beta_hat, -1e-6), -0.01)
@@ -259,12 +260,12 @@ class ControllerNode(Node):
 
     def control_loop_callback(self):
         # Longitudinal
-        # torque = self.longitudinal_controller()
+        torque = self.longitudinal_controller()
         # arg = -(self.alpha * torque + self.delta) / self.beta   # use when frozen
-        # arg = -((1.0 / self.alpha_bar_hat) * torque + self.delta_hat) / self.beta_hat   # use when adapting
-        # v_cmd = math.sqrt(arg) if arg > 0.0 else 0.0
-        # velocity = min(v_cmd, self.V_MAX) 
-        velocity = self.v_des
+        arg = -((1.0 / self.alpha_bar_hat) * torque + self.delta_hat) / self.beta_hat   # use when adapting
+        v_cmd = math.sqrt(arg) if arg > 0.0 else 0.0
+        velocity = min(v_cmd, self.V_MAX) 
+        # velocity = self.v_des
 
         # self.get_logger().info(
         #     f"LONG v_des={self.v_des:.3f}  v={self.state[3]:.3f}  v_cmd={velocity:.3f}  "
@@ -277,17 +278,13 @@ class ControllerNode(Node):
         phi = self.lateral_controller()
         angular = (velocity / self.L) * math.tan(phi) if abs(self.L) > 1e-5 else 0.0
 
-        # Dynamic test: Radius/steering diagnostic
-        tan_phi = math.tan(phi)
-        r_cmd = self.L / tan_phi if abs(tan_phi) > 1e-6 else float('inf')
-        r_expected = self.R + self.l_des
-        phi_expected = math.atan(self.L / r_expected) if abs(r_expected) > 1e-6 else 0.0
-        meas = self.meas_radius if self.meas_radius is not None else float('nan')
-        # self.get_logger().info(
-        #     f"RADIUS cmd={r_cmd:.3f} meas={meas:.3f} expected={r_expected:.3f}  "
-        #     f"phi={math.degrees(phi):.1f}deg phi_ff_expected={math.degrees(phi_expected):.1f}deg",
-        #     throttle_duration_sec=0.5,
-        # )
+        self.get_logger().info(
+            f"ERR e_v={self.state[3] - self.v_des:+.4f} "
+            f"(v={self.state[3]:.3f} v_des={self.v_des:.3f}) "
+            f"e_lat={self.state[1] - self.l_des:+.4f} "
+            f"(l={self.state[1]:+.3f} l_des={self.l_des:+.3f})",
+            throttle_duration_sec=0.5,
+        )
 
         # Send command
         msg = Twist()
