@@ -75,8 +75,11 @@ class ControllerNode(Node):
         self.k_1 = self.get_parameter('k_1').value
         self.k_2 = self.get_parameter('k_2').value
         self.V_MAX = self.get_parameter('V_MAX').value
-        self.MAX_TORQUE = 150.0 #TODO: convert into parameter
-        self.MIN_TORQUE = 0.0   #TODO: convert into parameter
+        # The controller output alpha_bar_hat*tau is now the VELOCITY command
+        # itself (m/s), not a torque, so it saturates at V_MAX. Keeping the
+        # saturation here is what drives the anti-windup freeze below.
+        self.MAX_TORQUE = self.V_MAX
+        self.MIN_TORQUE = 0.0
 
         self.alpha = self.get_parameter('alpha').value
         self.beta = self.get_parameter('beta').value
@@ -222,10 +225,14 @@ class ControllerNode(Node):
             self.beta_hat      += beta_hat_dot * self.dt
             self.delta_hat     += delta_hat_dot * self.dt
 
+        # Projection bounds, sized for u = alpha_bar_hat*tau in m/s (alpha_bar_hat
+        # = 1/a, beta_hat ~ -a, with a the inner velocity-loop bandwidth ~3-8).
+        # These are guards against singularity, not tuning knobs: if any estimate
+        # sits ON a bound during a run, the bound is wrong.
         self.omega = max(min(self.omega, 10.0), -10.0)
-        self.alpha_bar_hat = max(min(self.alpha_bar_hat, 1000.0), 10.0)
-        self.beta_hat  = max(min(self.beta_hat, -0.2), -5.0)
-        self.delta_hat = max(min(self.delta_hat, 2.0), -2.0)    
+        self.alpha_bar_hat = max(min(self.alpha_bar_hat, 2.0), 0.02)
+        self.beta_hat  = max(min(self.beta_hat, -0.2), -20.0)
+        self.delta_hat = max(min(self.delta_hat, 2.0), -2.0)
 
         self.prev_v_des = self.v_des
         return torque
@@ -260,11 +267,16 @@ class ControllerNode(Node):
 
     def control_loop_callback(self):
         # Longitudinal
-        torque = self.longitudinal_controller()
+        # Plant model is v_dot = alpha*u + beta*v + delta with u the velocity
+        # command, so (10) already returns u directly -- there is nothing to
+        # invert. The sqrt inversion below only makes sense with the v^2
+        # regressor: with the v regressor it reduces to v_cmd = sqrt(v), whose
+        # only fixed point is 1 m/s regardless of v_des.
+        velocity = self.longitudinal_controller()
         # arg = -(self.alpha * torque + self.delta) / self.beta   # use when frozen
-        arg = -((1.0 / self.alpha_bar_hat) * torque + self.delta_hat) / self.beta_hat   # use when adapting
-        v_cmd = math.sqrt(arg) if arg > 0.0 else 0.0
-        velocity = min(v_cmd, self.V_MAX) 
+        # arg = -((1.0 / self.alpha_bar_hat) * torque + self.delta_hat) / self.beta_hat   # use when adapting
+        # v_cmd = math.sqrt(arg) if arg > 0.0 else 0.0
+        # velocity = min(v_cmd, self.V_MAX)
         # velocity = self.v_des
 
         # self.get_logger().info(
