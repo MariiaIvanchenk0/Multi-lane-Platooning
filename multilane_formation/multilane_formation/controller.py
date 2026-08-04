@@ -48,7 +48,7 @@ class ControllerNode(Node):
         self.declare_parameter('wheelbase', 0.23)
         
         # Declare parameters (Longitudinal)
-        self.declare_parameter('k_1', 3.0)
+        self.declare_parameter('k_1', 1.5)
         self.declare_parameter('k_2', 0.3)
         self.declare_parameter('V_MAX', 1.0)
 
@@ -56,17 +56,17 @@ class ControllerNode(Node):
         self.declare_parameter('beta', -1.0)
         self.declare_parameter('delta', 0.0)
         
-        self.declare_parameter('alpha_bar_hat', 83.33)    # Adaptive guess for (1 / alpha)
-        self.declare_parameter('beta_hat', -0.0001)     # Adaptive guess for aerodynamic drag coefficient
-        self.declare_parameter('delta_hat', -0.1)       # Adaptive guess for constant disturbance/friction
+        self.declare_parameter('alpha_bar_hat', 0.2)    # Adaptive guess for (1 / alpha)
+        self.declare_parameter('beta_hat', -5.0)     # Adaptive guess for aerodynamic drag coefficient
+        self.declare_parameter('delta_hat', 0.0)       # Adaptive guess for constant disturbance/friction
 
         self.declare_parameter('gamma_alpha', 0.001)
         self.declare_parameter('gamma_beta', 0.0001)
         self.declare_parameter('gamma_delta', 0.01)
 
         # Declare parameters (Lateral)
-        self.declare_parameter('k_a1', 0.5)
-        self.declare_parameter('k_a2', 0.5)
+        self.declare_parameter('k_a1', 1.5)
+        self.declare_parameter('k_a2', 1.5)
         self.declare_parameter('ki', 0.3)
         self.declare_parameter('PHI_MAX', 20.0)
         self.declare_parameter('l_lane', 0.0)
@@ -202,13 +202,13 @@ class ControllerNode(Node):
 
         tau = (- self.k_1 * e_v
                - self.k_2 * self.omega
-               - self.beta_hat * (v ** 2)
+               - self.beta_hat * v #(v ** 2)
                - self.delta_hat
                + v_des_dot)
 
         omega_dot = e_v
         alpha_bar_hat_dot = -self.gamma_alpha * e_v * tau
-        beta_hat_dot = self.gamma_beta * (v ** 2) * e_v
+        beta_hat_dot = self.gamma_beta * v * e_v # (v ** 2) * e_v
         delta_hat_dot = self.gamma_delta * e_v
 
         torque_raw = self.alpha_bar_hat * tau
@@ -222,10 +222,10 @@ class ControllerNode(Node):
             self.beta_hat      += beta_hat_dot * self.dt
             self.delta_hat     += delta_hat_dot * self.dt
 
-        # self.omega = max(min(self.omega, 20.0), -20.0)
-        # self.alpha_bar_hat = max(self.alpha_bar_hat, 1e-4)
-        # self.beta_hat  = max(min(self.beta_hat, -1e-6), -0.01)
-        # self.delta_hat = max(min(self.delta_hat, 0.0), -5.0)    
+        self.omega = max(min(self.omega, 10.0), -10.0)
+        self.alpha_bar_hat = max(min(self.alpha_bar_hat, 1000.0), 10.0)
+        self.beta_hat  = max(min(self.beta_hat, -0.2), -5.0)
+        self.delta_hat = max(min(self.delta_hat, 2.0), -2.0)    
 
         self.prev_v_des = self.v_des
         return torque

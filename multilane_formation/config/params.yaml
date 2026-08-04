@@ -8,7 +8,7 @@
 
 "/**/controller":
   ros__parameters:
-    k_1: 3.0 # 3.0
+    k_1: 1.5 # 3.0
     k_2: 0.3 # 0.3
     V_MAX: 1.0
 
@@ -16,16 +16,16 @@
     beta: -1.0 # -0.0001
     delta: 0.0 # -0.1
 
-    alpha_bar_hat: 100.0 # 83.33 # 1.0
-    beta_hat: -1.0 # -0.0001
+    alpha_bar_hat: 0.2 # 83.33 # 1.0
+    beta_hat: -5.0 # -0.0001
     delta_hat: 0.0 # -0.1
 
     gamma_alpha: 0.001
     gamma_beta: 0.0001
     gamma_delta: 0.01
     
-    k_a1: 0.5
-    k_a2: 0.5
+    k_a1: 1.
+    k_a2: 1.5
     ki: 0.3
     PHI_MAX: 20.0
     l_lane: 0.0
