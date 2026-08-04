@@ -36,111 +36,109 @@ import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Twist, PoseStamped
 from std_msgs.msg import Float64MultiArray
-from rclpy.qos import QoSProfile, HistoryPolicy, qos_profile_sensor_data
+from rclpy.qos import qos_profile_sensor_data
 
 class ControllerNode(Node):
     def __init__(self):
         super().__init__('controller_node')
+        self.declare_parameter('R', 1.0)
+        self.declare_parameter('frequency', 20.0)
+        self.declare_parameter('center_x', 0.0)
+        self.declare_parameter('center_y', 0.0)
+        self.declare_parameter('wheelbase', 0.145)
         
         # Declare parameters (Longitudinal)
-        self.declare_parameter('k_1', 0.0)
-        self.declare_parameter('k_2', 0.0)
-        self.declare_parameter('frequency', 20.0)
+        self.declare_parameter('k_1', 1.0)
+        self.declare_parameter('k_2', 0.1)
+        self.declare_parameter('V_MAX', 1.0)
 
-        self.declare_parameter('gamma_alpha', 0.001)
-        self.declare_parameter('gamma_beta', 0.0001)
-        self.declare_parameter('gamma_delta', 0.01)
+        self.declare_parameter('alpha', 0.01)
+        self.declare_parameter('beta', -1.0)
+        self.declare_parameter('delta', 0.0)
         
         self.declare_parameter('alpha_bar_hat', 83.33)    # Adaptive guess for (1 / alpha)
         self.declare_parameter('beta_hat', -0.0001)     # Adaptive guess for aerodynamic drag coefficient
         self.declare_parameter('delta_hat', -0.1)       # Adaptive guess for constant disturbance/friction
 
-        self.declare_parameter('alpha', 0.0012)
-        self.declare_parameter('beta', -0.0001)
-        self.declare_parameter('delta', -0.1)
+        self.declare_parameter('gamma_alpha', 0.001)
+        self.declare_parameter('gamma_beta', 0.0001)
+        self.declare_parameter('gamma_delta', 0.01)
 
         # Declare parameters (Lateral)
         self.declare_parameter('k_a1', 0.5)
         self.declare_parameter('k_a2', 0.5)
+        self.declare_parameter('ki', 0.5)
+        self.declare_parameter('PHI_MAX', 17.0)
         self.declare_parameter('l_lane', 0.0)
-        self.declare_parameter('R', 1.0)
-        self.declare_parameter('center_x', 1.0)
-        self.declare_parameter('center_y', 1.0)
-        self.declare_parameter('wheelbase', 0.125)
-        # self.declare_parameter('wheel_radius', 0.035)
-        # self.declare_parameter('mass', 2.5)
 
         # Get parameters (Longitudinal)
         self.k_1 = self.get_parameter('k_1').value
         self.k_2 = self.get_parameter('k_2').value
-
-        self.gamma_alpha = self.get_parameter('gamma_alpha').value
-        self.gamma_beta = self.get_parameter('gamma_beta').value
-        self.gamma_delta = self.get_parameter('gamma_delta').value
-
-        self.alpha_bar_hat = self.get_parameter('alpha_bar_hat').value
-        self.beta_hat = self.get_parameter('beta_hat').value
-        self.delta_hat = self.get_parameter('delta_hat').value
+        self.V_MAX = self.get_parameter('V_MAX').value
+        self.MAX_TORQUE = 150.0 #TODO: convert into parameter
+        self.MIN_TORQUE = 0.0   #TODO: convert into parameter
 
         self.alpha = self.get_parameter('alpha').value
         self.beta = self.get_parameter('beta').value
         self.delta = self.get_parameter('delta').value
 
+        # self.alpha_bar_hat = 1.0 / self.alpha
+        # self.beta_hat = self.beta
+        # self.delta_hat = self.delta
+
+        self.alpha_bar_hat = self.get_parameter('alpha_bar_hat').value
+        self.beta_hat = self.get_parameter('beta_hat').value
+        self.delta_hat = self.get_parameter('delta_hat').value
+
+        self.gamma_alpha = self.get_parameter('gamma_alpha').value
+        self.gamma_beta = self.get_parameter('gamma_beta').value
+        self.gamma_delta = self.get_parameter('gamma_delta').value
+
         # Get parameters (Lateral)
         self.k_a1 = self.get_parameter('k_a1').value
         self.k_a2 = self.get_parameter('k_a2').value
-        self.l_lane = self.get_parameter('l_lane').value   
+        self.ki = self.get_parameter('ki').value
+        self.PHI_MAX = math.radians(self.get_parameter('PHI_MAX').value)
+        self.l_lane = self.get_parameter('l_lane').value 
+
         self.R = self.get_parameter('R').value 
         self.L = self.get_parameter('wheelbase').value
-        # self.wheel_R = self.get_parameter('wheel_radius').value 
-        # self.mass = self.get_parameter('mass').value
-
         self.xc, self.yc = self.get_parameter('center_x').value, self.get_parameter('center_y').value
+        self.dt = 1.0 / self.get_parameter('frequency').value # nominal period, used as fallback only
+
+
         self.prev_x, self.prev_y = None, None
         self.last_pose_stamp = None
         self.last_control_time = None
+
         self.prev_theta = None
         self.meas_radius = None
-        self.current_v = 0.0
-        self.prev_v_des = 0.0
 
-        self.ki = 0.5
+        self.prev_v_des = 0.0
         self.l_integral = 0.0
 
         self.v_des = 0.0
         self.l_des = 0.0
         self.omega = 0.0          # Accumulated velocity error state
         self.state = [0.0, 0.0, 0.0, 0.0]
-        self.dt = 1.0 / self.get_parameter('frequency').value # nominal period, used as fallback only
-
-        qos_profile = QoSProfile(depth=1, history=HistoryPolicy.KEEP_LAST)
 
         # Subscriptions & Publisher & Timer
         self.kinematic_sub = self.create_subscription(Float64MultiArray, 'kinematic_input', self.kinematic_callback, qos_profile_sensor_data)
-        # self.state_sub = self.create_subscription(Float64MultiArray, 'vehicle_state', self.state_callback, qos_profile_sensor_data)
-        self.pose_sub = self.create_subscription(PoseStamped, 'pose', self.pose_callback, qos_profile_sensor_data)
 
-        # self.control_pub = self.create_publisher(Float64MultiArray, 'cntl_vector', qos_profile_sensor_data)
+        self.pose_sub = self.create_subscription(PoseStamped, 'pose', self.pose_callback, qos_profile_sensor_data)
         self.raw_cmd_pub = self.create_publisher(Twist, 'raw_cmd_vel', 10)
 
         self.timer = self.create_timer(self.dt, self.control_loop_callback)
 
-        # Startup readout of the effective (post-parameter) config. If any of
-        # these are wrong, params.yaml is not being applied to this node.
-        # These are exactly the values that set the commanded radius = L / tan(phi),
-        # so verify them against what you expect before trusting the radius log.
-        self.get_logger().info(
-            "[EFFECTIVE PARAMS] "
-            f"R={self.R}  wheelbase(L)={self.L}  "
-            f"center=({self.xc:.4f}, {self.yc:.4f})  "
-            f"k_a1={self.k_a1}  k_a2={self.k_a2}  l_lane={self.l_lane}  "
-            f"frequency={self.get_parameter('frequency').value}  "
-            f"expected_ff_steer={math.degrees(math.atan(self.L / self.R)):.2f}deg (at l_des=0)"
-        )
+        # self.get_logger().info(
+        #     "[EFFECTIVE PARAMS] "
+        #     f"R={self.R}  wheelbase(L)={self.L}  "
+        #     f"center=({self.xc:.4f}, {self.yc:.4f})  "
+        #     f"k_a1={self.k_a1}  k_a2={self.k_a2}  l_lane={self.l_lane}  "
+        #     f"frequency={self.get_parameter('frequency').value}  "
+        #     f"expected_ff_steer={math.degrees(math.atan(self.L / self.R)):.2f}deg (at l_des=0)"
+        # )
 
-    # def state_callback(self, msg):
-    #     self.state = msg.data
-    
     def kinematic_callback(self, msg):
         self.v_des = msg.data[0]
         self.l_des = msg.data[1]
@@ -164,25 +162,15 @@ class ControllerNode(Node):
         # 3. Lateral error (l)
         dist_from_center = math.hypot(x - self.xc, y - self.yc)
         l = dist_from_center - self.R
+       
+        # self.get_logger().info(
+        #     f"pose x={x:.3f} y={y:.3f}  "
+        #     f"theta={math.degrees(theta):.1f}  theta_c={math.degrees(theta_center):.1f}  "
+        #     f"theta_r={math.degrees(theta_r):.1f}  psi={math.degrees(psi):.1f}  l={l:.3f}",
+        #     throttle_duration_sec=0.3,
+        # )
 
-        # --- Frame/convention diagnostic ---------------------------------------
-        # Point the robot along its INTENDED travel direction while on the circle:
-        #   psi ~ 0     -> heading convention correct
-        #   psi ~ +/-180 or wrong sign -> travel-direction / yaw-sign mismatch
-        #     (fix theta_r's +/-pi/2, the feed-forward sign, and v_f together)
-        # theta_center should sweep the full -180..+180 as the robot goes around;
-        # if it only ever stays within -90..+90, line 152 is still math.atan.
-        self.get_logger().info(
-            f"pose x={x:.3f} y={y:.3f}  "
-            f"theta={math.degrees(theta):.1f}  theta_c={math.degrees(theta_center):.1f}  "
-            f"theta_r={math.degrees(theta_r):.1f}  psi={math.degrees(psi):.1f}  l={l:.3f}",
-            throttle_duration_sec=0.3,
-        )
-
-        # 4. Linear velocity (v) -- uses the actual elapsed time between pose
-        # messages (from the message timestamp), not the nominal control-loop
-        # dt, since the pose publish rate can jitter relative to that nominal
-        # period.
+        # 4. Linear velocity (v)
         stamp = msg.header.stamp.sec + msg.header.stamp.nanosec * 1e-9
         v = 0.0
         if self.prev_x is not None and self.prev_y is not None and self.last_pose_stamp is not None:
@@ -191,14 +179,14 @@ class ControllerNode(Node):
                 dist_moved = math.hypot(x - self.prev_x, y - self.prev_y)
                 v = dist_moved / dt_pose
 
-            if self.prev_theta is not None and dist_moved > 1e-4:
-                dtheta = normalize_angle(theta - self.prev_theta)
-                if abs(dtheta) > 1e-4:
-                    r_inst = dist_moved / dtheta
-                    if self.meas_radius is None:
-                        self.meas_radius = r_inst
-                    else:
-                        self.meas_radius = 0.7 * self.meas_radius + 0.3 * r_inst
+                if self.prev_theta is not None and dist_moved > 1e-4:
+                    dtheta = normalize_angle(theta - self.prev_theta)
+                    if abs(dtheta) > 1e-4:
+                        r_inst = dist_moved / dtheta
+                        if self.meas_radius is None:
+                            self.meas_radius = r_inst
+                        else:
+                            self.meas_radius = 0.7 * self.meas_radius + 0.3 * r_inst
 
         self.prev_x = x
         self.prev_y = y
@@ -207,87 +195,52 @@ class ControllerNode(Node):
 
         self.state = [s, l, psi, v]
 
+    def longitudinal_controller(self):
+        v = self.state[3]
+        v_des_dot = (self.v_des - self.prev_v_des) / self.dt
+        e_v = v - self.v_des
 
-    def control_loop_callback(self):
-        # Use the actual elapsed wall/ROS time since the last call, not the
-        # nominal 1/frequency period, since ROS timers can jitter under load.
-        # now = self.get_clock().now().nanoseconds * 1e-9
-        # if self.last_control_time is None:
-        #     dt = self.dt
-        # else:
-        #     dt = now - self.last_control_time
-        #     if dt <= 0.0:
-        #         dt = self.dt
-        # self.last_control_time = now
+        tau = (- self.k_1 * e_v
+               - self.k_2 * self.omega
+               - self.beta_hat * (v ** 2)
+               - self.delta_hat
+               + v_des_dot)
 
-        # Longitudinal Controller
-        # v = self.state[3]
-        # v_des_dot = (self.v_des - self.prev_v_des) / dt
+        omega_dot = e_v
+        alpha_bar_hat_dot = -self.gamma_alpha * e_v * tau
+        beta_hat_dot = self.gamma_beta * (v ** 2) * e_v
+        delta_hat_dot = self.gamma_delta * e_v
 
-        # --- Step 1: Calculate Velocity Error ---
-        # e_v = v - self.v_des
+        torque_raw = self.alpha_bar_hat * tau
+        torque = max(min(torque_raw, self.MAX_TORQUE), self.MIN_TORQUE)
+        saturated = abs(torque - torque_raw) > 1e-9
 
-        # --- Step 2: Calculate Tau (Intermediate Control Action) ---
-        # tau = (- self.k_1 * e_v
-        #        - self.k_2 * self.omega
-        #        - self.beta_hat * (v ** 2)
-        #        - self.delta_hat
-        #        + v_des_dot)
-
-        # --- Step 3: Compute Adaptive Law Derivatives (ODEs), Eq.14 ---
-        # omega_dot = e_v
-        # alpha_bar_hat_dot = -self.gamma_alpha * e_v * tau
-        # beta_hat_dot = self.gamma_beta * (v ** 2) * e_v
-        # delta_hat_dot = self.gamma_delta * e_v
-
-        # --- Step 5: Final Torque (Eq.10). Computed BEFORE integrating the
-        # adaptive/integral states so we can detect actuator saturation and do
-        # anti-windup. torque = alpha_bar_hat * tau, so it is O(1/alpha) ~ 800x
-        # tau -- a torque, NOT a velocity. ---
-        # torque_raw = self.alpha_bar_hat * tau
-        # MAX_TORQUE = 1500.0
-        # MIN_TORQUE = -500.0
-        # torque = max(min(torque_raw, MAX_TORQUE), MIN_TORQUE)
-        # saturated = abs(torque - torque_raw) > 1e-9
-
-        # --- Step 4: Integrate adaptive/integral states (Forward Euler) WITH
-        # anti-windup. If the torque is pinned to a limit, the controller cannot
-        # act on the error, so continuing to integrate it just winds omega up
-        # against the rail -- that is exactly what drove torque hard negative.
-        # Freeze the integral states while saturated. ---
-        # if not saturated:
-        #     self.omega += omega_dot * dt
-        #     self.alpha_bar_hat += alpha_bar_hat_dot * dt
-        #     self.beta_hat += beta_hat_dot * dt
-        #     self.delta_hat += delta_hat_dot * dt
-
-        # if self.alpha_bar_hat < 0.0001:
-        #     self.alpha_bar_hat = 0.0001
-
+        if not saturated:
+            # self.omega += e_v * self.dt
+            self.omega         += omega_dot * self.dt
+            self.alpha_bar_hat += alpha_bar_hat_dot * self.dt
+            self.beta_hat      += beta_hat_dot * self.dt
+            self.delta_hat     += delta_hat_dot * self.dt
         # self.omega = max(min(self.omega, 20.0), -20.0)
+        # self.alpha_bar_hat = max(self.alpha_bar_hat, 1e-4)
+        # self.beta_hat  = max(min(self.beta_hat, -1e-6), -0.01)
+        # self.delta_hat = max(min(self.delta_hat, 0.0), -5.0)    
 
-        # self.beta_hat = max(min(self.beta_hat, 0.0), -0.01)
-        # self.delta_hat = max(min(self.delta_hat, 0.0), -5.0)
+        self.prev_v_des = self.v_des
+        return torque
 
-        # self.prev_v_des = self.v_des
-
-        # self.get_logger().info(f"T: {torque} v: {v}, v_des: {self.v_des}")
-
-        # Lateral Controller
+    def lateral_controller(self):
         l = self.state[1]
         psi = self.state[2]
-        
-        # --- Step 1: Calculate Errors ---
+
         e_psi = -psi
         e_lat = l - self.l_des # self.l_lane - 
 
-        PHI_I_MAX = math.radians(15)
-        self.l_integral += l * self.dt
+        self.l_integral += e_lat * self.dt
         phi_integral = self.ki * self.l_integral
-        phi_integral = max(min(phi_integral, PHI_I_MAX), -PHI_I_MAX)
-        self.l_integral = max(min(self.l_integral, PHI_I_MAX/self.ki), -PHI_I_MAX/self.ki)
-        
-        # --- Step 2: Calculate Steering Angle Components ---
+        phi_integral = max(min(phi_integral, self.PHI_MAX), -self.PHI_MAX)
+        self.l_integral = max(min(self.l_integral, self.PHI_MAX/self.ki), -self.PHI_MAX/self.ki)
+
         numerator = -math.cos(e_psi) * e_lat - (self.k_a1 + self.k_a2) * math.sin(e_psi)
         denominator = self.k_a1 - (self.k_a1 + self.k_a2) * math.cos(e_psi) + math.sin(e_psi) * e_lat
 
@@ -300,22 +253,31 @@ class ControllerNode(Node):
         phi = math.atan(numerator / denominator) + phi_feedforward + phi_integral
         # phi = math.atan2(numerator, denominator)
 
-        # Yahboom R2 Ackermann steering servo maxes out around +/-30 deg, not 45.
         MAX_STEER = math.radians(30.0)
         phi = max(min(phi, MAX_STEER), -MAX_STEER)
-        
-        angular = self.convert_to_twist(self.v_des, phi)
+        return phi
 
-        msg = Twist()
-        msg.linear.x = self.v_des
-        msg.angular.z = angular
-        self.raw_cmd_pub.publish(msg)
+    def control_loop_callback(self):
+        # Longitudinal
+        # torque = self.longitudinal_controller()
+        # arg = -(self.alpha * torque + self.delta) / self.beta   # use when frozen
+        # arg = -((1.0 / self.alpha_bar_hat) * torque + self.delta_hat) / self.beta_hat   # use when adapting
+        # v_cmd = math.sqrt(arg) if arg > 0.0 else 0.0
+        # velocity = min(v_cmd, self.V_MAX) 
+        velocity = self.v_des
 
-        # --- Radius / steering diagnostic (dynamic test) -----------------------
-        # phi oscillating (e.g. 0.05..0.35) -> loop not converging (weaving),
-        #   look at psi/direction/gains.
-        # phi steady near phi_ff_expected but meas < expected -> wheelbase:
-        #   real radius = (R+l_des) * (L_real / L_config); fix wheelbase.
+        # self.get_logger().info(
+        #     f"LONG v_des={self.v_des:.3f}  v={self.state[3]:.3f}  v_cmd={velocity:.3f}  "
+        #     f"T={torque:.2f}  omega={self.omega:.3f}"
+        #     f"{'   [omega NOT ~0 -> feed-forward off]' if abs(self.omega) > 0.5 else ''}",
+        #     throttle_duration_sec=0.5,
+        # )
+
+        # Lateral
+        phi = self.lateral_controller()
+        angular = (velocity / self.L) * math.tan(phi) if abs(self.L) > 1e-5 else 0.0
+
+        # Dynamic test: Radius/steering diagnostic
         tan_phi = math.tan(phi)
         r_cmd = self.L / tan_phi if abs(tan_phi) > 1e-6 else float('inf')
         r_expected = self.R + self.l_des
@@ -327,27 +289,11 @@ class ControllerNode(Node):
         #     throttle_duration_sec=0.5,
         # )
 
-        # Throttled runtime readout of the tracking signals.
-        # self.get_logger().info(
-        #     f"\nv_des={self.v_des:.3f}\n"
-        #     f"l={l:.3f} l_des={self.l_des:.3f} psi={psi:.3f} ({math.degrees(psi):.0f} deg)\n"
-        #     f"-> cmd v={msg.linear.x} w={msg.angular.x}",
-        #     throttle_duration_sec=1.0,
-        # )
-
-    def convert_to_twist(self, torque, steering_angle):
-        # acceleration = self.alpha * torque + self.beta * (self.current_v ** 2) + self.delta
-        # self.current_v += acceleration * dt
-
-        # V_MAX = 1.0   # Yahboom realistic top speed (m/s); forward-only
-        # self.current_v = max(min(self.current_v, V_MAX), 0.0)
-
-        if abs(self.L) > 1e-5:
-            omega_z = (torque / self.L) * math.tan(steering_angle)
-        else:
-            omega_z = 0.0
-
-        return float(omega_z)
+        # Send command
+        msg = Twist()
+        msg.linear.x = velocity
+        msg.angular.z = angular
+        self.raw_cmd_pub.publish(msg)
 
 def quaternion_to_yaw(q):
     siny_cosp = 2 * (q.w * q.z + q.x * q.y)

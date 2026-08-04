@@ -1,74 +1,38 @@
 /**:
   ros__parameters:
     R: 1.0                 # reference-path radius (metres) -- NOT a robot dimension
-    center_x:  1.103482127188517
+    frequency: 20.0
+    center_x: 1.103482127188517
     center_y: 0.06993669405299056
     wheelbase: 0.145       # front-to-rear axle distance (L). Sets turning radius = L/tan(phi).
-    wheel_radius: 0.0325   # ~65mm dia wheels (reference only; not used by the active controller)
-    mass: 1.5              # (reference only; not used by the active controller)
-    frequency: 20.0
 
-model_simulation_node:
-  ros__parameters:
-    alpha: 0.0012               # the unknown input gain
-    beta: -0.0001               # the unknown damping coefficient
-    delta: -0.1                 # a fixed unknown disturbance
-
-    base_frame: "robot_bs"      # name for this robot instance
-
-    s0: 0.0                     # initial s (longitudinal position)
-    l0: 0.0                     # initial l (lateral position)
-    psi0: 0.0                   # initial psi (yaw/heading angle)
-    v0: 0.0                     # initial velocity
-
-# '/**/controller' matches the node named 'controller' under any namespace
-# (e.g. /agent_1/controller). A bare 'controller_node:' would NOT match, since
-# the launch file renames the node to 'controller' and namespaces it.
 "/**/controller":
   ros__parameters:
+    k_1: 1.0 # 3.0
+    k_2: 0.1 # 0.3
+    V_MAX: 1.0
+
+    alpha: 0.01 # 0.0012
+    beta: -1.0 # -0.0001
+    delta: 0.0 # -0.1
+
+    alpha_bar_hat: 100.0 # 83.33 # 1.0
+    beta_hat: -1.0 # -0.0001
+    delta_hat: 0.0 # -0.1
+
     gamma_alpha: 0.001
     gamma_beta: 0.0001
     gamma_delta: 0.01
-
-    k_1: 3.0
-    k_2: 0.3
-
-    alpha_bar_hat: 8003.33 # 1.0
-    beta_hat: -0.0001
-    delta_hat: -0.1
-
-    alpha: 0.0012
-    beta: -0.0001
-    delta: -0.1
     
     k_a1: 0.5
     k_a2: 0.5
-    # l_lane: 0.0
+    ki: 0.5
+    PHI_MAX: 15.0
+    l_lane: 0.0
 
-# longitudinal_controller_node:
-#   ros__parameters:
-#     gamma_alpha: 0.001
-#     gamma_beta: 0.0001
-#     gamma_delta: 0.01
 
-#     k_1: 25.0
-#     k_2: 1.5
-
-#     alpha_bar_hat: 833.33 # 1.0
-#     beta_hat: -0.0001
-#     delta_hat: -0.1
-    
-# lateral_controller_node:
-#   ros__parameters:
-#     k_a1: 1.5
-#     k_a2: 3.0
-#     l_lane: 0.0
-
-# '/**/formation_controller' matches the node named 'formation_controller'
-# under any namespace (e.g. /agent_1/formation_controller).
 "/**/formation_controller":
   ros__parameters:
-    # id: 1.0
     neighbor_id: [2]    # IDs of topological neighbors
     namespace: "robot"  # Must match omnisim/polytope_safety_net agent namespace
     
@@ -76,9 +40,5 @@ model_simulation_node:
     k_l: 0.3
     k_n: 0.06           # Smooth deadzone design constant
 
-    v_f: 0.3           # Desired cruise speed (m/s)
+    v_f: 0.7           # Desired cruise speed (m/s)
     n_bar: 0.03          # Bounded noise threshold (m)
-
-# road_adaptation_node:
-#   ros__parameters:
-#     R: 20.0
