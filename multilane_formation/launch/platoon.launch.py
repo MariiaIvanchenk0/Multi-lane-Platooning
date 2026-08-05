@@ -23,8 +23,8 @@ def generate_launch_description():
     # (e.g. agent_1, agent_2, ...) so pose/cmd_vel topics actually connect.
     namespace = "robot"
     platoon_config = [
-        [1, 0.0, 0.0, 0.3, [2], 0.0],
-        [2,  1.2, 0.0, 0.3, [1], 0.0],
+        [1, 0.0, [2], 0.0],
+        [2, 0.0, [1], 0.0],
         # [3, -10.0, 2.0, 15.0, [1, 2], 2.0],
     ]
     # platoon_config = [
@@ -40,7 +40,7 @@ def generate_launch_description():
 
     launch_nodes = []
     
-    for robot_id, s0, l0, v0, neighbors, lane in platoon_config:
+    for robot_id, l0, neighbors, lane in platoon_config:
         namespace_string = f"{namespace}_{robot_id}"
         
         robot_group = GroupAction([
@@ -53,9 +53,7 @@ def generate_launch_description():
                 parameters=[params_config, {
                     'l_lane': lane,
                     'id': robot_id,
-                    's0': s0,
                     'l0': l0,
-                    'v0': v0,
                     'viz_lanes': unique_lanes,
                 }]
             ),

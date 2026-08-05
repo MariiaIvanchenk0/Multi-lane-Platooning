@@ -85,10 +85,6 @@ class ControllerNode(Node):
         self.beta = self.get_parameter('beta').value
         self.delta = self.get_parameter('delta').value
 
-        # self.alpha_bar_hat = 1.0 / self.alpha
-        # self.beta_hat = self.beta
-        # self.delta_hat = self.delta
-
         self.alpha_bar_hat = self.get_parameter('alpha_bar_hat').value
         self.beta_hat = self.get_parameter('beta_hat').value
         self.delta_hat = self.get_parameter('delta_hat').value
@@ -108,7 +104,6 @@ class ControllerNode(Node):
         self.L = self.get_parameter('wheelbase').value
         self.xc, self.yc = self.get_parameter('center_x').value, self.get_parameter('center_y').value
         self.dt = 1.0 / self.get_parameter('frequency').value # nominal period, used as fallback only
-
 
         self.prev_x, self.prev_y = None, None
         self.last_pose_stamp = None
@@ -133,15 +128,6 @@ class ControllerNode(Node):
 
         self.timer = self.create_timer(self.dt, self.control_loop_callback)
 
-        # self.get_logger().info(
-        #     "[EFFECTIVE PARAMS] "
-        #     f"R={self.R}  wheelbase(L)={self.L}  "
-        #     f"center=({self.xc:.4f}, {self.yc:.4f})  "
-        #     f"k_a1={self.k_a1}  k_a2={self.k_a2}  l_lane={self.l_lane}  "
-        #     f"frequency={self.get_parameter('frequency').value}  "
-        #     f"expected_ff_steer={math.degrees(math.atan(self.L / self.R)):.2f}deg (at l_des=0)"
-        # )
-
     def kinematic_callback(self, msg):
         self.v_des = msg.data[0]
         self.l_des = msg.data[1]
@@ -165,13 +151,6 @@ class ControllerNode(Node):
         # 3. Lateral error (l)
         dist_from_center = math.hypot(x - self.xc, y - self.yc)
         l = dist_from_center - self.R
-       
-        # self.get_logger().info(
-        #     f"pose x={x:.3f} y={y:.3f}  "
-        #     f"theta={math.degrees(theta):.1f}  theta_c={math.degrees(theta_center):.1f}  "
-        #     f"theta_r={math.degrees(theta_r):.1f}  psi={math.degrees(psi):.1f}  l={l:.3f}",
-        #     throttle_duration_sec=0.3,
-        # )
 
         # 4. Linear velocity (v)
         stamp = msg.header.stamp.sec + msg.header.stamp.nanosec * 1e-9
@@ -258,7 +237,7 @@ class ControllerNode(Node):
         r_lane = self.R + self.l_des
         phi_feedforward = math.atan(self.L / r_lane) if abs(r_lane) > 1e-6 else 0.0
 
-        phi = math.atan(numerator / denominator) + phi_feedforward + phi_integral
+        phi = math.atan(numerator / denominator) + phi_feedforward #+ phi_integral
         # phi = math.atan2(numerator, denominator)
 
         MAX_STEER = math.radians(30.0)
@@ -267,24 +246,12 @@ class ControllerNode(Node):
 
     def control_loop_callback(self):
         # Longitudinal
-        # Plant model is v_dot = alpha*u + beta*v + delta with u the velocity
-        # command, so (10) already returns u directly -- there is nothing to
-        # invert. The sqrt inversion below only makes sense with the v^2
-        # regressor: with the v regressor it reduces to v_cmd = sqrt(v), whose
-        # only fixed point is 1 m/s regardless of v_des.
         velocity = self.longitudinal_controller()
         # arg = -(self.alpha * torque + self.delta) / self.beta   # use when frozen
         # arg = -((1.0 / self.alpha_bar_hat) * torque + self.delta_hat) / self.beta_hat   # use when adapting
         # v_cmd = math.sqrt(arg) if arg > 0.0 else 0.0
         # velocity = min(v_cmd, self.V_MAX)
         # velocity = self.v_des
-
-        # self.get_logger().info(
-        #     f"LONG v_des={self.v_des:.3f}  v={self.state[3]:.3f}  v_cmd={velocity:.3f}  "
-        #     f"T={torque:.2f}  omega={self.omega:.3f}"
-        #     f"{'   [omega NOT ~0 -> feed-forward off]' if abs(self.omega) > 0.5 else ''}",
-        #     throttle_duration_sec=0.5,
-        # )
 
         # Lateral
         phi = self.lateral_controller()
