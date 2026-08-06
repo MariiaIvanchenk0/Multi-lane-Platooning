@@ -237,7 +237,7 @@ class ControllerNode(Node):
         r_lane = self.R + self.l_des
         phi_feedforward = math.atan(self.L / r_lane) if abs(r_lane) > 1e-6 else 0.0
 
-        phi = math.atan(numerator / denominator) + phi_feedforward #+ phi_integral
+        phi = math.atan(numerator / denominator) + phi_feedforward + phi_integral
         # phi = math.atan2(numerator, denominator)
 
         MAX_STEER = math.radians(30.0)
