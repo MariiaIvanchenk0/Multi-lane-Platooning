@@ -34,10 +34,10 @@
 
 "/**/formation_controller":
   ros__parameters:
-    neighbor_id: [2]    # IDs of topological neighbors
+    # neighbor_id: [2]    # IDs of topological neighbors
     namespace: "robot"  # Must match omnisim/polytope_safety_net agent namespace
     
-    k_s: 0.15 # 0.6
+    k_s: 0.3 # 0.6
     k_l: 0.1
     k_n: 0.06           # Smooth deadzone design constant
 

@@ -310,7 +310,7 @@ class FormationControllerNode(Node):
         u_is = self.k_s * filtered_error_s + self.v_f
         u_il = self.k_l * filtered_error_l
 
-        U_MIN = 0.0
+        U_MIN = 0.15
         U_MAX = 1.0
         u_is = max(min(u_is, U_MAX), U_MIN)
         # u_il = max(min(u_il, 5.0), -5.0)

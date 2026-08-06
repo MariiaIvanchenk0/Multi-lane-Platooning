@@ -184,13 +184,13 @@ class ControllerNode(Node):
 
         tau = (- self.k_1 * e_v
                - self.k_2 * self.omega
-               - self.beta_hat * (v ** 2)
+               - self.beta_hat * v #(v ** 2)
                - self.delta_hat
                + v_des_dot)
 
         omega_dot = e_v
         alpha_bar_hat_dot = -self.gamma_alpha * e_v * tau
-        beta_hat_dot = self.gamma_beta * (v ** 2) * e_v
+        beta_hat_dot = self.gamma_beta * v * e_v#(v ** 2) * e_v
         delta_hat_dot = self.gamma_delta * e_v
 
         torque_raw = self.alpha_bar_hat * tau
