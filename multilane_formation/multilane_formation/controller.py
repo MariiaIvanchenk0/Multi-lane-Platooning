@@ -157,18 +157,21 @@ class ControllerNode(Node):
         v = 0.0
         if self.prev_x is not None and self.prev_y is not None and self.last_pose_stamp is not None:
             dt_pose = stamp - self.last_pose_stamp
-            if dt_pose > 0.0:
+            if dt_pose > 0.005:
                 dist_moved = math.hypot(x - self.prev_x, y - self.prev_y)
-                v = dist_moved / dt_pose
+                v_raw = dist_moved / dt_pose
 
-                if self.prev_theta is not None and dist_moved > 1e-4:
-                    dtheta = normalize_angle(theta - self.prev_theta)
-                    if abs(dtheta) > 1e-4:
-                        r_inst = dist_moved / dtheta
-                        if self.meas_radius is None:
-                            self.meas_radius = r_inst
-                        else:
-                            self.meas_radius = 0.7 * self.meas_radius + 0.3 * r_inst
+                if v_raw < 2.0 * self.V_MAX:
+                    v = v_raw
+
+                # if self.prev_theta is not None and dist_moved > 1e-4:
+                #     dtheta = normalize_angle(theta - self.prev_theta)
+                #     if abs(dtheta) > 1e-4:
+                #         r_inst = dist_moved / dtheta
+                #         if self.meas_radius is None:
+                #             self.meas_radius = r_inst
+                #         else:
+                #             self.meas_radius = 0.7 * self.meas_radius + 0.3 * r_inst
 
         self.prev_x = x
         self.prev_y = y
@@ -180,6 +183,7 @@ class ControllerNode(Node):
     def longitudinal_controller(self):
         v = self.state[3]
         v_des_dot = (self.v_des - self.prev_v_des) / self.dt
+        # v_des_dot = max(min(v_des_dot, 1.0), -1.0)
         e_v = v - self.v_des
 
         tau = (- self.k_1 * e_v
@@ -196,6 +200,20 @@ class ControllerNode(Node):
         torque_raw = self.alpha_bar_hat * tau
         torque = max(min(torque_raw, self.MAX_TORQUE), self.MIN_TORQUE)
         # saturated = abs(torque - torque_raw) > 1e-9
+        _terms = (f"P{-self.k_1 * e_v:+.3f} I{-self.k_2 * self.omega:+.3f} "
+                  f"B{-self.beta_hat * v:+.3f} D{-self.delta_hat:+.3f} "
+                  f"F{v_des_dot:+.3f}")
+        if torque <= 1e-9:
+            # unthrottled: the stop is a brief event and must not be missed
+            self.get_logger().warn(
+                f"TAU ZERO tau={tau:+.3f} = {_terms}  |  v={v:.3f} "
+                f"v_des={self.v_des:.3f} w={self.omega:+.3f} dh={self.delta_hat:+.3f}")
+        else:
+            self.get_logger().info(
+                f"TAU tau={tau:+.3f} = {_terms}  ->  u={torque:.3f}",
+                throttle_duration_sec=1.0)
+
+
 
         # if not saturated:
             # self.omega += e_v * self.dt
@@ -257,13 +275,13 @@ class ControllerNode(Node):
         phi = self.lateral_controller()
         angular = (velocity / self.L) * math.tan(phi) if abs(self.L) > 1e-5 else 0.0
 
-        self.get_logger().info(
-            f"ERR e_v={self.state[3] - self.v_des:+.4f} "
-            f"(v={self.state[3]:.3f} v_des={self.v_des:.3f}) "
-            f"e_lat={self.state[1] - self.l_des:+.4f} "
-            f"(l={self.state[1]:+.3f} l_des={self.l_des:+.3f})",
-            throttle_duration_sec=0.5,
-        )
+        # self.get_logger().info(
+        #     f"ERR e_v={self.state[3] - self.v_des:+.4f} "
+        #     f"(v={self.state[3]:.3f} v_des={self.v_des:.3f}) "
+        #     f"e_lat={self.state[1] - self.l_des:+.4f} "
+        #     f"(l={self.state[1]:+.3f} l_des={self.l_des:+.3f})",
+        #     throttle_duration_sec=0.5,
+        # )
 
         # Send command
         msg = Twist()
