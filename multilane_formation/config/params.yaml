@@ -2,8 +2,9 @@
   ros__parameters:
     R: 1.0                 # reference-path radius (metres) -- NOT a robot dimension
     frequency: 20.0
-    center_x: 1.103482127188517
-    center_y: 0.06993669405299056
+    center_x: 0.11755446408248767
+    center_y: 0.0039042005042047552
+
     wheelbase: 0.23       # front-to-rear axle distance (L). Sets turning radius = L/tan(phi).
 
 "/**/controller":
@@ -36,8 +37,8 @@
     neighbor_id: [2]    # IDs of topological neighbors
     namespace: "robot"  # Must match omnisim/polytope_safety_net agent namespace
     
-    k_s: 0.4 # 0.6
-    k_l: 0.3
+    k_s: 0.15 # 0.6
+    k_l: 0.1
     k_n: 0.06           # Smooth deadzone design constant
 
     v_f: 0.3           # Desired cruise speed (m/s)

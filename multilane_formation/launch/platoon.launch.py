@@ -35,7 +35,7 @@ def generate_launch_description():
     #     [5, 45.0, -4.0, 27.0, [2, 3, 4], 4.0]
     # ]
 
-    assigned_lanes = [float(config[5]) for config in platoon_config]
+    assigned_lanes = [float(config[3]) for config in platoon_config]
     unique_lanes = list(set(assigned_lanes + [0.0]))
 
     launch_nodes = []

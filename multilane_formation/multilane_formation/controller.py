@@ -184,25 +184,25 @@ class ControllerNode(Node):
 
         tau = (- self.k_1 * e_v
                - self.k_2 * self.omega
-               - self.beta_hat * v #(v ** 2)
+               - self.beta_hat * (v ** 2)
                - self.delta_hat
                + v_des_dot)
 
         omega_dot = e_v
         alpha_bar_hat_dot = -self.gamma_alpha * e_v * tau
-        beta_hat_dot = self.gamma_beta * v * e_v # (v ** 2) * e_v
+        beta_hat_dot = self.gamma_beta * (v ** 2) * e_v
         delta_hat_dot = self.gamma_delta * e_v
 
         torque_raw = self.alpha_bar_hat * tau
         torque = max(min(torque_raw, self.MAX_TORQUE), self.MIN_TORQUE)
-        saturated = abs(torque - torque_raw) > 1e-9
+        # saturated = abs(torque - torque_raw) > 1e-9
 
-        if not saturated:
+        # if not saturated:
             # self.omega += e_v * self.dt
-            self.omega         += omega_dot * self.dt
-            self.alpha_bar_hat += alpha_bar_hat_dot * self.dt
-            self.beta_hat      += beta_hat_dot * self.dt
-            self.delta_hat     += delta_hat_dot * self.dt
+        self.omega         += omega_dot * self.dt
+        self.alpha_bar_hat += alpha_bar_hat_dot * self.dt
+        self.beta_hat      += beta_hat_dot * self.dt
+        self.delta_hat     += delta_hat_dot * self.dt
 
         # Projection bounds, sized for u = alpha_bar_hat*tau in m/s (alpha_bar_hat
         # = 1/a, beta_hat ~ -a, with a the inner velocity-loop bandwidth ~3-8).
