@@ -103,7 +103,7 @@ class ControllerNode(Node):
         self.R = self.get_parameter('R').value 
         self.L = self.get_parameter('wheelbase').value
         self.xc, self.yc = self.get_parameter('center_x').value, self.get_parameter('center_y').value
-        self.dt = 1.0 / self.get_parameter('frequency').value # nominal period, used as fallback only
+        self.dt = 1.0 / self.get_parameter('frequency').value
 
         self.prev_x, self.prev_y = None, None
         self.last_pose_stamp = None
@@ -183,7 +183,6 @@ class ControllerNode(Node):
     def longitudinal_controller(self):
         v = self.state[3]
         v_des_dot = (self.v_des - self.prev_v_des) / self.dt
-        # v_des_dot = max(min(v_des_dot, 1.0), -1.0)
         e_v = v - self.v_des
 
         tau = (- self.k_1 * e_v
@@ -194,15 +193,15 @@ class ControllerNode(Node):
 
         omega_dot = e_v
         alpha_bar_hat_dot = -self.gamma_alpha * e_v * tau
-        beta_hat_dot = self.gamma_beta * v * e_v#(v ** 2) * e_v
+        beta_hat_dot = self.gamma_beta * v * e_v #(v ** 2) * e_v
         delta_hat_dot = self.gamma_delta * e_v
 
         torque_raw = self.alpha_bar_hat * tau
         torque = max(min(torque_raw, self.MAX_TORQUE), self.MIN_TORQUE)
-        # saturated = abs(torque - torque_raw) > 1e-9
         _terms = (f"P{-self.k_1 * e_v:+.3f} I{-self.k_2 * self.omega:+.3f} "
                   f"B{-self.beta_hat * v:+.3f} D{-self.delta_hat:+.3f} "
                   f"F{v_des_dot:+.3f}")
+
         if torque <= 1e-9:
             # unthrottled: the stop is a brief event and must not be missed
             self.get_logger().warn(
@@ -213,20 +212,12 @@ class ControllerNode(Node):
                 f"TAU tau={tau:+.3f} = {_terms}  ->  u={torque:.3f}",
                 throttle_duration_sec=1.0)
 
-
-
-        # if not saturated:
-            # self.omega += e_v * self.dt
         self.omega         += omega_dot * self.dt
         self.alpha_bar_hat += alpha_bar_hat_dot * self.dt
         self.beta_hat      += beta_hat_dot * self.dt
         self.delta_hat     += delta_hat_dot * self.dt
 
-        # Projection bounds, sized for u = alpha_bar_hat*tau in m/s (alpha_bar_hat
-        # = 1/a, beta_hat ~ -a, with a the inner velocity-loop bandwidth ~3-8).
-        # These are guards against singularity, not tuning knobs: if any estimate
-        # sits ON a bound during a run, the bound is wrong.
-        self.omega = max(min(self.omega, 10.0), -10.0)
+        self.omega = max(min(self.omega, 2.0), -2.0)
         self.alpha_bar_hat = max(min(self.alpha_bar_hat, 2.0), 0.02)
         self.beta_hat  = max(min(self.beta_hat, -0.2), -20.0)
         self.delta_hat = max(min(self.delta_hat, 2.0), -2.0)

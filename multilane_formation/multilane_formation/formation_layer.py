@@ -73,7 +73,7 @@ class FormationControllerNode(Node):
         self.desired_offsets = {
             1: [1.0, 0.0],
             2: [0.0, 0.0],
-            # 3: [-10.0, 2.0],
+            # 3: [0.5, -0.3],
         }
         # self.desired_offsets = {
         #     1: [0.0, 0.0],
@@ -316,7 +316,8 @@ class FormationControllerNode(Node):
         # u_il = max(min(u_il, 5.0), -5.0)
 
         # --- Step 4.1: Road Adaptation ---
-        v_i_des = u_is
+        # v_i_des = u_is
+        v_i_des = u_is * (self.R + self.l_i_des) / self.R
         self.l_i_des += u_il * dt
 
         # Anti-windup on the road-adaptation integrator. Without this the desired

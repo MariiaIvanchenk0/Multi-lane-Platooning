@@ -27,8 +27,9 @@ def generate_launch_description():
     # [robot_id, initial_s, initial_l, initial_v, [neighbor_ids], assigned_lane]
     namespace = "robot"
     platoon_config = [
-        [1, 0.0, [2], 0.0],
-        [2, 0.0, [1], 0.0],
+        [1, 0.0, [2, 3], 0.0],
+        [2, 0.0, [1, 3], 0.0],
+        # [3, -0.3, [1, 2], 0.0],
     ]
 
     # assigned_lanes = [float(config[5]) for config in platoon_config]
