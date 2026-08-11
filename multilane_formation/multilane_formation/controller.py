@@ -65,8 +65,8 @@ class ControllerNode(Node):
         self.declare_parameter('gamma_delta', 0.01)
 
         # Declare parameters (Lateral)
-        self.declare_parameter('k_a1', 1.5)
-        self.declare_parameter('k_a2', 1.5)
+        self.declare_parameter('k_a1', 0.5)
+        self.declare_parameter('k_a2', 1.0)
         self.declare_parameter('ki', 0.3)
         self.declare_parameter('PHI_MAX', 20.0)
         self.declare_parameter('l_lane', 0.0)
@@ -217,10 +217,10 @@ class ControllerNode(Node):
         self.beta_hat      += beta_hat_dot * self.dt
         self.delta_hat     += delta_hat_dot * self.dt
 
-        self.omega = max(min(self.omega, 2.0), -2.0)
-        self.alpha_bar_hat = max(min(self.alpha_bar_hat, 2.0), 0.02)
-        self.beta_hat  = max(min(self.beta_hat, -0.2), -20.0)
-        self.delta_hat = max(min(self.delta_hat, 2.0), -2.0)
+        # self.omega = max(min(self.omega, 2.0), -2.0)
+        # self.alpha_bar_hat = max(min(self.alpha_bar_hat, 2.0), 0.02)
+        # self.beta_hat  = max(min(self.beta_hat, -0.2), -20.0)
+        # self.delta_hat = max(min(self.delta_hat, 2.0), -2.0)
 
         self.prev_v_des = self.v_des
         return torque
