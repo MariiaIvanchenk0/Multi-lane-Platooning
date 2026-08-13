@@ -13,12 +13,12 @@
     k_2: 0.3 # 0.3
     V_MAX: 1.0
 
-    alpha: 0.01 # 0.0012
-    beta: -1.0 # -0.0001
-    delta: 0.0 # -0.1
+    # alpha: 0.01 # 0.0012
+    # beta: -1.0 # -0.0001
+    # delta: 0.0 # -0.1
 
-    alpha_bar_hat: 0.2 # 83.33 # 1.0
-    beta_hat: -5.0 # -0.0001
+    alpha_bar_hat: 0.59 # 83.33 # 1.0
+    beta_hat: -1.69 # -0.0001
     delta_hat: 0.0 # -0.1
 
     gamma_alpha: 0.001

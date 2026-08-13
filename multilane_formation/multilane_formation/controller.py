@@ -56,8 +56,8 @@ class ControllerNode(Node):
         self.declare_parameter('beta', -1.0)
         self.declare_parameter('delta', 0.0)
         
-        self.declare_parameter('alpha_bar_hat', 0.2)    # Adaptive guess for (1 / alpha)
-        self.declare_parameter('beta_hat', -5.0)     # Adaptive guess for aerodynamic drag coefficient
+        self.declare_parameter('alpha_bar_hat', 0.59)    # Adaptive guess for (1 / alpha)
+        self.declare_parameter('beta_hat', -1.69)     # Adaptive guess for aerodynamic drag coefficient
         self.declare_parameter('delta_hat', 0.0)       # Adaptive guess for constant disturbance/friction
 
         self.declare_parameter('gamma_alpha', 0.001)
@@ -81,9 +81,9 @@ class ControllerNode(Node):
         self.MAX_TORQUE = self.V_MAX
         self.MIN_TORQUE = 0.0
 
-        self.alpha = self.get_parameter('alpha').value
-        self.beta = self.get_parameter('beta').value
-        self.delta = self.get_parameter('delta').value
+        # self.alpha = self.get_parameter('alpha').value
+        # self.beta = self.get_parameter('beta').value
+        # self.delta = self.get_parameter('delta').value
 
         self.alpha_bar_hat = self.get_parameter('alpha_bar_hat').value
         self.beta_hat = self.get_parameter('beta_hat').value
@@ -217,8 +217,8 @@ class ControllerNode(Node):
         self.beta_hat      += beta_hat_dot * self.dt
         self.delta_hat     += delta_hat_dot * self.dt
 
-        # self.omega = max(min(self.omega, 2.0), -2.0)
-        # self.alpha_bar_hat = max(min(self.alpha_bar_hat, 2.0), 0.02)
+        # self.omega = max(min(self.omega, 10.0), -10.0)
+        self.alpha_bar_hat = max(self.alpha_bar_hat, 0.1)
         # self.beta_hat  = max(min(self.beta_hat, -0.2), -20.0)
         # self.delta_hat = max(min(self.delta_hat, 2.0), -2.0)
 
