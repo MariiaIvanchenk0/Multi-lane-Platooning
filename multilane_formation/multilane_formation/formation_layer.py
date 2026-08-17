@@ -74,7 +74,7 @@ class FormationControllerNode(Node):
             1: [1.0, 0.0] ,
             2: [0.0, 0.0],
             # 2: [0.0, 0.5],
-            3: [0.5, -0.3],
+            4: [0.5, -0.3],
         }
         self.marker_color_r = random.random()
         self.marker_color_g = random.random()

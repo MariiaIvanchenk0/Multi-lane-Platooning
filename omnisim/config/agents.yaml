@@ -14,6 +14,11 @@ agents:
     serial_number: 3JKDH6U00133TP
     initial_pose: {x: -1.42, y: -1.07, yaw: 0.101} # s0=0.3, l0=0.0
 
+  - vrpn_name: dji_robot_6
+    name: robot_4
+    serial_number: 3JKDH6U00133TP
+    initial_pose: {x: -1.42, y: -1.07, yaw: 0.101} # s0=0.3, l0=0.0
+
   # Re-enable together with robot 3 in platoon.launch.py + desired_offsets.
   # - vrpn_name: dji_robot_6
   #   name: robot_3
