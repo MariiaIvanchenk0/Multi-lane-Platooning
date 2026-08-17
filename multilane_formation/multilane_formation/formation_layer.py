@@ -71,18 +71,11 @@ class FormationControllerNode(Node):
         self.last_control_time = None
         self.neighbor_prev_positions = {}
         self.desired_offsets = {
-            # 1: [1.0, 0.0],
-            1: [0.0, 0.0],
-            2: [0.0, 0.5],
-            # 3: [0.5, -0.3],
+            1: [1.0, 0.0] ,
+            2: [0.0, 0.0],
+            # 2: [0.0, 0.5],
+            3: [0.5, -0.3],
         }
-        # self.desired_offsets = {
-        #     1: [0.0, 0.0],
-        #     2: [20.0, 0.0],
-        #     3: [40.0, 0.0],
-        #     4: [10.0, -3.4],
-        #     5: [30.0, -4.0]
-        # }
         self.marker_color_r = random.random()
         self.marker_color_g = random.random()
         self.marker_color_b = random.random()
@@ -313,12 +306,15 @@ class FormationControllerNode(Node):
 
         U_MIN = 0.15
         U_MAX = 1.0
-        u_is = max(min(u_is, U_MAX), U_MIN)
+        # u_is = max(min(u_is, U_MAX), U_MIN)
         # u_il = max(min(u_il, 5.0), -5.0)
 
         # --- Step 4.1: Road Adaptation ---
         # v_i_des = u_is
+        # v_i_des = u_is * (self.R + self.l_i_des) / self.R
+
         v_i_des = u_is * (self.R + self.l_i_des) / self.R
+        v_i_des = max(min(v_i_des, U_MAX), U_MIN)
         self.l_i_des += u_il * dt
 
         # Anti-windup on the road-adaptation integrator. Without this the desired

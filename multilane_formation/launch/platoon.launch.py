@@ -22,18 +22,16 @@ def generate_launch_description():
     # Must match the agent names in omnisim/polytope_safety_net's agents.yaml
     # (e.g. agent_1, agent_2, ...) so pose/cmd_vel topics actually connect.
     namespace = "robot"
-    platoon_config = [
-        [1, 0.0, [2], 0.0],
-        [2, 0.0, [1], 0.0],
-        # [3, -0.3, [1, 2], 0.0],
-    ]
     # platoon_config = [
-    #     [1,  0.0, -0.3, 30.0, [2, 4], 0.0], # [2, 4]
-    #     [2, 22.0, 0.0, 25.0, [1, 3, 5], 0.0], # [1, 3, 5]
-    #     [3, 48.0,  0.5, 26.0, [2, 5], 0.0], # [2, 5]
-    #     [4, 10.0, -3.4, 31.0, [1, 5], 4.0], # [1, 5]
-    #     [5, 45.0, -4.0, 27.0, [2, 3, 4], 4.0]
+    #     [1, 0.0, [2], 0.0],
+    #     [2, 0.0, [1], 0.0],
+    #     # [3, -0.3, [1, 2], 0.0],
     # ]
+    platoon_config = [
+        [1,   0.0,  [2, 3], 0.0],
+        [2,   0.0,  [1, 3], 0.0],
+        [3,  -0.3,  [1, 2], 0.0],
+    ]
 
     assigned_lanes = [float(config[3]) for config in platoon_config]
     unique_lanes = list(set(assigned_lanes + [0.0]))
