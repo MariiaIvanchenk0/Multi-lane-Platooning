@@ -10,7 +10,11 @@ agents:
     initial_pose: {x: 1.0000, y: 0.0000, yaw: 1.5708}   # s0=0.0, l0=0.0
 
   - vrpn_name: dji_robot_5
+<<<<<<< HEAD
     name: agent_2
+=======
+    name: robot_5
+>>>>>>> 7a35c5a (Formation with 3 robots in multilane.)
     serial_number: 3JKDH6U00133TP
     initial_pose: {x: 0.9553, y: 0.2955, yaw: 1.8708}   # s0=0.3, l0=0.0
 

@@ -23,9 +23,15 @@ def generate_launch_description():
     # (e.g. agent_1, agent_2, ...) so pose/cmd_vel topics actually connect.
     namespace = "agent"
     platoon_config = [
+<<<<<<< HEAD
         [1,   0.0, 0.0, 0.5, [2], 0.0],
         [2,  1.2, 0.0, 0.5, [1], 0.0],
         # [3, -10.0, 2.0, 15.0, [1, 2], 2.0],
+=======
+        [1,   0.0,  [5, 4], 0.0],
+        [5,   0.0,  [1, 4], 0.0],
+        [4,  -0.3,  [1, 5], 0.0],
+>>>>>>> 7a35c5a (Formation with 3 robots in multilane.)
     ]
     # platoon_config = [
     #     [1,  0.0, -0.3, 30.0, [2, 4], 0.0], # [2, 4]

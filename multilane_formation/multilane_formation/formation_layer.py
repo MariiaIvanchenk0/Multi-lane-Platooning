@@ -69,9 +69,16 @@ class FormationControllerNode(Node):
         self.last_control_time = None
         self.neighbor_prev_positions = {}
         self.desired_offsets = {
+<<<<<<< HEAD
             1: [0.0, 0.0],
             2: [1.2, 0.0],
             # 3: [-10.0, 2.0],
+=======
+            1: [1.0, 0.0] ,
+            5: [0.0, 0.0],
+            # 2: [0.0, 0.5],
+            4: [0.5, -0.3],
+>>>>>>> 7a35c5a (Formation with 3 robots in multilane.)
         }
         # self.desired_offsets = {
         #     1: [0.0, 0.0],
