@@ -17,7 +17,7 @@ set -u
 
 ROBOTS=("$@")
 if [ ${#ROBOTS[@]} -eq 0 ]; then
-    ROBOTS=(robot_1 robot_2 robot_4)
+    ROBOTS=(robot_1 robot_2 robot_4 robot_5)
 fi
 
 RATE=20

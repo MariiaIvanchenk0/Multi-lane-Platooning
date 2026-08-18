@@ -10,7 +10,7 @@ agents:
     initial_pose: {x: -0.14, y: -1.076, yaw: 0.025}  # s0=0.0, l0=0.0
 
   - vrpn_name: dji_robot_5
-    name: robot_2
+    name: robot_5
     serial_number: 3JKDH6U00133TP
     initial_pose: {x: -1.42, y: -1.07, yaw: 0.101} # s0=0.3, l0=0.0
 

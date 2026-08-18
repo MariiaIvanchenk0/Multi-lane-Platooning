@@ -72,7 +72,7 @@ class FormationControllerNode(Node):
         self.neighbor_prev_positions = {}
         self.desired_offsets = {
             1: [1.0, 0.0] ,
-            2: [0.0, 0.0],
+            5: [0.0, 0.0],
             # 2: [0.0, 0.5],
             4: [0.5, -0.3],
         }
